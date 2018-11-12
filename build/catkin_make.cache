@@ -1,2 +1,2 @@
-
+test_ros
 -DCMAKE_BUILD_TYPE=Debug -DCATKIN_DEVEL_PREFIX=/home/jay/Projects/MDCFS/devel -DCMAKE_INSTALL_PREFIX=/home/jay/Projects/MDCFS/install -G Unix Makefiles

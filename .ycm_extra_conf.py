@@ -21,7 +21,11 @@ flags = [
 '-isystem',
 '/home/jay/Projects/MDCFS/devel/include',
 '-isystem',
-'/home/jay/Projects/MDCFS/src/CMakeLists.txt/include'
+'/home/jay/Projects/MDCFS/src/test_opencv/include',
+'-isystem',
+'/home/jay/Projects/MDCFS/src/test_ros/include',
+'-isystem',
+'/home/jay/Projects/MDCFS/src/test_serial/include'
 ]
 
 compilation_database_folder = ''

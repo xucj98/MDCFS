@@ -10,7 +10,7 @@ const string img_path = "/home/jay/Datasets/MH_01_pictures/";
 
 int main(int argc, char **argv)
 {
-    ros::init(argc,argv,"example");
+    ros::init(argc,argv,"test_opencv_node");
     ros::NodeHandle n;
     ros::Publisher chatter_pub = n.advertise<std_msgs::String>("message",1000);
     ros::Rate loop_rate(10);

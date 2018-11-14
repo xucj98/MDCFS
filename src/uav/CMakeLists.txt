@@ -2,19 +2,27 @@ cmake_minimum_required(VERSION 2.8.3)
 project(uav)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-# add_compile_options(-std=c++11)
+add_compile_options(-std=c++11)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  message_generation
   roscpp
   serial
   std_msgs
+  cmake_modules
 )
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
+
+find_package(Eigen3 REQUIRED)
+
+include_directories(
+  ${EIGEN_INCLUDE_DIRS}
+)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -47,11 +55,9 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+add_message_files(FILES
+  UWB.msg
+)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -68,10 +74,9 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs
-# )
+generate_messages(DEPENDENCIES
+  std_msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -103,6 +108,8 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
+  CATKIN_DEPENDS
+  message_runtime
 #  INCLUDE_DIRS include
 #  LIBRARIES uav
 #  CATKIN_DEPENDS roscpp serial std_msgs
@@ -204,5 +211,13 @@ add_executable(uav_communication_node
 )
 add_dependencies(uav_communication_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(uav_communication_node
+  ${catkin_LIBRARIES}
+)
+
+add_executable(uav_pose_estimator_node
+  src/uav_pose_estimator_node.cpp
+)
+add_dependencies(uav_pose_estimator_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(uav_pose_estimator_node
   ${catkin_LIBRARIES}
 )

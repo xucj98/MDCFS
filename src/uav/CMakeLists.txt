@@ -224,4 +224,5 @@ add_executable(uav_visualization_node
 add_dependencies(uav_visualization_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(uav_visualization_node
   ${catkin_LIBRARIES}
+  ${Pangolin_LIBRARIES}
 )

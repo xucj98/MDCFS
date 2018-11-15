@@ -193,7 +193,7 @@ void pose_estimator(
                           2 * Eigen::MatrixXf(a_w) * Eigen::MatrixXf(xe_q.vec()).transpose();
 
     // Jacobi(ze_w, (xe_w, we_bw))
-    H.block(7, 13, 3, 3) = R_xe_q;
+    H.block(7, 13, 3, 3) = R;
     H.block(7, 19, 3, 3) = Eigen::Matrix3f::Identity();
 
     // Jacobi(ze_w, xe_q)

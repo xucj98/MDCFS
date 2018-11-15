@@ -18,7 +18,9 @@ int main(int argc, char** argv)
     ros::NodeHandle n("~"); 
     
     std::string sp_name;
+
     n.param<std::string>("sp_name", sp_name, "default");
+
     ROS_INFO("sp_name = %s", sp_name.c_str());
 
     //创建timeout 
@@ -68,8 +70,10 @@ int main(int argc, char** argv)
             
             //类型转换
             std::string str((char*)buffer);
+            
             std::stringstream ss;
             ss << str; 
+
             std_msgs::String msg; 
             msg.data = ss.str();
             

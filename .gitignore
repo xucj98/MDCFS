@@ -1,5 +1,4 @@
 build/
 devel/
 devel_isolated/
-
 .ycm_extra_conf.pyc

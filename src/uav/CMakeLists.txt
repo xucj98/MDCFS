@@ -7,23 +7,17 @@ add_compile_options(-std=c++11)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS
-  message_generation
-  roscpp
-  serial
-  std_msgs
-  cmake_modules
-)
+find_package(catkin REQUIRED COMPONENTS message_generation roscpp serial std_msgs cmake_modules geometry_msgs)
 
 ## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
+find_package(Boost REQUIRED)
 
 find_package(Eigen3 REQUIRED)
-
 include_directories(
-  ${EIGEN_INCLUDE_DIRS}
-)
+  include ${catkin_INCLUDE_DIRS}${EIGEN_INCLUDE_DIRS})
 
+find_package(Pangolin 0.4 REQUIRED)
+include_directories(${Pangolin_INCLUDE_DIRS})
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -56,6 +50,7 @@ include_directories(
 
 ## Generate messages in the 'msg' folder
 add_message_files(FILES
+  uav_states.msg
   UWB.msg
 )
 
@@ -76,6 +71,7 @@ add_message_files(FILES
 ## Generate added messages and services with any dependencies listed here
 generate_messages(DEPENDENCIES
   std_msgs
+  geometry_msgs
 )
 
 ################################################
@@ -219,5 +215,13 @@ add_executable(uav_pose_estimator_node
 )
 add_dependencies(uav_pose_estimator_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(uav_pose_estimator_node
+  ${catkin_LIBRARIES}
+)
+
+add_executable(uav_visualization_node
+  src/uav_visualization_node.cpp
+)
+add_dependencies(uav_visualization_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(uav_visualization_node
   ${catkin_LIBRARIES}
 )

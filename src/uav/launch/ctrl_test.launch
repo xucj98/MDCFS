@@ -1,0 +1,9 @@
+<launch> 
+
+    <group ns="uav_1">
+        <node pkg="uav" name="ctrl_node" type="uav_ctrl_node" output="screen">
+        </node>
+        <!--<node pkg="uav" name="pose_estimator_node" type="uav_pose_estimator_node" output="screen"/>-->
+    </group>
+  
+</launch>

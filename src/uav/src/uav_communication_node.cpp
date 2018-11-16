@@ -23,7 +23,7 @@ int main(int argc, char** argv)
     
     //设置并打开串口
     std::string sp_name;
-    np.param<std::string>("sp_name", sp_name, "default");
+    np.param<std::string>("sp_name", sp_name, "/dev/rfcomm3");
     ROS_INFO("sp_name = %s", sp_name.c_str());
 
     serial::Timeout to = serial::Timeout::simpleTimeout(100); 
@@ -61,7 +61,7 @@ int main(int argc, char** argv)
 
     size_t Buffer_length=0; //buffer数组长度
     int state=0;            //数据状态
-    uint8_t buffer[1024];
+    uint8_t buffer[10240];
 
     while(ros::ok()) 
     { 
@@ -70,6 +70,7 @@ int main(int argc, char** argv)
     
         if(1) 
         { 
+            
             n= sp.read(&buffer[Buffer_length], n); 
             Buffer_length+=n;
 

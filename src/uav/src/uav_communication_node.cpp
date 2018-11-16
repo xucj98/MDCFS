@@ -51,7 +51,7 @@ int main(int argc, char** argv)
     //创建一个发布者用于发布串口接收到的数据
     ros::Publisher serial_pub = n.advertise<std_msgs::UInt8>("receive", 1000);
     //创建一个订阅者用于订阅需要发往无人机的数据
-    ros::Subscriber serial_sub = n.subscribe("transmit", 1000, transmitCallback);
+    ros::Subscriber serial_sub = n.subscribe("command", 1000, transmitCallback);
     
     //创建一个发布者用于发布IMU信息
     ros::Publisher imu_pub = n.advertise<sensor_msgs::Imu>("imu", 1000);
@@ -129,7 +129,7 @@ int main(int argc, char** argv)
                     }
                     else if(buffer[1]==0x0B)
                     {
-                        if(Buffer_length<18) 
+                        if(Buffer_length<14) 
                         {}
                         else
                         {   
@@ -139,18 +139,17 @@ int main(int argc, char** argv)
                         sensor_msgs::Imu imu;
                         imu.header.stamp = ros::Time((float)temp_time2/1000);
 
-                        imu.linear_acceleration.x = ((short)((buffer[6]<<8)+buffer[7]))/1000.0;
-                        imu.linear_acceleration.y = ((short)((buffer[8]<<8)+buffer[9]))/1000.0;
-                        imu.linear_acceleration.z = ((short)((buffer[10]<<8)+buffer[11]))/1000.0;
+                        imu.orientation.x = ((short)((buffer[6]<<8)+buffer[7]))/1000.0;
+                        imu.orientation.y = ((short)((buffer[8]<<8)+buffer[9]))/1000.0;
+                        imu.orientation.z = ((short)((buffer[10]<<8)+buffer[11]))/1000.0;
+                        imu.orientation.w = ((short)((buffer[12]<<8)+buffer[13]))/1000.0;
 
-                        imu.angular_velocity.x = ((short)((buffer[12]<<8)+buffer[13]))/1000.0;
-                        imu.angular_velocity.y = ((short)((buffer[14]<<8)+buffer[15]))/1000.0;
-                        imu.angular_velocity.z = ((short)((buffer[16]<<8)+buffer[17]))/1000.0;
 
                         imu_pub.publish(imu);
 
                         // ROS_INFO("Acc:receive %f %f %f",imu.linear_acceleration.x,imu.linear_acceleration.y,imu.linear_acceleration.z);
                         // ROS_INFO("Ang:receive %f %f %f",imu.angular_velocity.x,imu.angular_velocity.y,imu.angular_velocity.z);
+
                           state=0;
                           Buffer_length=0;
                           }

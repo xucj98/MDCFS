@@ -106,11 +106,6 @@ int main(int argc, char **argv)
     ros::NodeHandle n;
     ros::NodeHandle np("~");
 
-    short test = -27430;
-    unsigned char a = test >> 8, b = test & 0xFF;
-    std::cout << test << ' ' << (int)a << ' ' << (int)b << ' ' << ((a << 8) + b) << std::endl;  
-
-
     int uav_count;
     np.param<int>("uav_count", uav_count, 3);
 

@@ -10,7 +10,7 @@ const Eigen::Vector3f ap1( 5.1,  0.2,  2.3);
 const Eigen::Vector3f ap2( 5.3,  4.3,  2.5);
 const Eigen::Vector3f ap3( 0.3,  2.5,  0.8);
 
-#define sqr(x) (x*x)
+#define sqr(x) ((x)*(x))
 
 static bool initialized = false;
 static float last_time;
@@ -20,11 +20,10 @@ static Eigen::Quaternion<float> q; // uav coordinate rotation in world frame.
 static Eigen::Vector3f v; // uav linear velocity in world frame.
 static Eigen::Vector3f a; // uav linear acceleration in world frame.
 static Eigen::Vector3f w; // uav coordinate angular velocity in world frame.
-static Eigen::Vector3f ba; // imu linear acceleration bias.
-static Eigen::Vector3f bw; // imu angular velocity bias.
 static Eigen::Vector3f g; // gravity acceleration in world frame.
-static Eigen::MatrixXf P(25, 25); // covariance matrix of estimate
-static Eigen::MatrixXf Q(25, 25); // covariance matrix of inference
+static Eigen::Vector3f bw; // the bias of angular velocity
+static Eigen::MatrixXf P(16, 16); // covariance matrix of estimate
+static Eigen::MatrixXf Q(16, 16); // covariance matrix of inference
 // static Eigen::MatrixXf R(10, 10); // covariance matrix of observation
 
 static ros::Publisher states_pub;
@@ -56,7 +55,7 @@ void pose_estimator(
     // initialized system
     if (!initialized)
     {
-        // ROS_INFO("initialized %d %d", imu_init_cnt, uwb_init_cnt);
+        ROS_INFO("initialized %d %d", imu_init_cnt, uwb_init_cnt);
         last_time = curr_time;
 
         // estimate initial value of position
@@ -70,13 +69,12 @@ void pose_estimator(
             v << 0, 0, 0;
             a << 0, 0, 0;
             w << 0, 0, 0;
-            ba << 0, 0, 0;
-            bw << 0, 0, 0;
-            g << 0, 0, 9.8;              
+            g << 0, 0, 0;            
+            bw << 0, 0, 0;  
 
-            Q.setZero(25, 25);
-            Q = 0.01 * Eigen::MatrixXf::Identity(25, 25);        
-            P.setZero(25, 25);
+            Q.setZero(16, 16);
+            Q = 0.01 * Eigen::MatrixXf::Identity(16, 16);        
+            P.setZero(16, 16);
         }
 
         if (R(0, 0) < 1) // uwb data is available
@@ -95,16 +93,18 @@ void pose_estimator(
         
         if (R(4, 4) < 1) // imu data is available
         {
+            g += imu_a;
             bw += imu_w;
             imu_init_cnt += 1;
         }
 
-        if (uwb_init_cnt >= 10)
+        if (uwb_init_cnt >= 5 && imu_init_cnt >= 50)
         {
             initialized = true;
+            g /= imu_init_cnt;
             bw /= imu_init_cnt;
             p /= uwb_init_cnt;
-            p << 1.5, 4, 1;
+            // p << 1.5, 4, 1;
             // ROS_INFO("initial position %f %f %f", p(0), p(1), p(2));
         }
         return;
@@ -123,7 +123,7 @@ void pose_estimator(
     // std::cout << std::fixed << std::setprecision(2) << zo << std::endl << std::endl;
     
     // estimate xe = f(x)
-    Eigen::Vector3f xe_p, xe_v, xe_a, xe_w, xe_ba, xe_bw, xe_g; 
+    Eigen::Vector3f xe_p, xe_v, xe_a, xe_w; 
     Eigen::Quaternion<float> xe_q, xe_dq; 
     
     xe_p = p + dt * v + 0.5 * dt * dt * a;
@@ -136,13 +136,10 @@ void pose_estimator(
     
     xe_a = a;
     xe_w = w;
-    xe_ba = ba;
-    xe_bw = bw;
-    xe_g = g;
 
     // calculate F = Jacobi(f, x)
-    Eigen::MatrixXf F(25, 25);
-    F.setZero(25, 25);
+    Eigen::MatrixXf F(16, 16);
+    F.setZero(16, 16);
     
     // Jacobi(xe_p, (p, v, a))
     F.block(0, 0, 3, 3) = Eigen::Matrix3f::Identity();
@@ -163,8 +160,8 @@ void pose_estimator(
     F.block(7, 7, 3, 3) = Eigen::Matrix3f::Identity();
     F.block(7, 10, 3, 3) = dt * Eigen::Matrix3f::Identity();
 
-    // Jacobi((xe_a, xe_w, xe_ba, xe_bw, xe_g), (a, w, ba, bw, g))
-    F.block(10, 10, 15, 15) = Eigen::MatrixXf::Identity(15, 15);
+    // Jacobi((xe_a, xe_w), (a, w))
+    F.block(10, 10, 6, 6) = Eigen::MatrixXf::Identity(6, 6);
 
     // std::cout << "==================== Matrix F ========================" << std::endl;
     // std::cout << std::fixed << std::setprecision(2) << F << std::endl << std::endl;
@@ -180,13 +177,13 @@ void pose_estimator(
     ze_d(3) = (xe_p - ap3).squaredNorm();
     
     Eigen::Quaternion<float> tmp_q;
-    tmp_q.w() = 0; tmp_q.vec() = xe_a + xe_g;
+    tmp_q.w() = 0; tmp_q.vec() = xe_a + g;
     tmp_q = xe_q.inverse() * tmp_q * xe_q;
-    ze_a = tmp_q.vec() + xe_ba;
+    ze_a = tmp_q.vec();
 
     tmp_q.w() = 0; tmp_q.vec() = xe_w;
     tmp_q = xe_q.inverse() * tmp_q * xe_q;
-    ze_w = tmp_q.vec() + xe_bw;
+    ze_w = tmp_q.vec();
 
     ze.segment(0, 4) = ze_d;
     ze.segment(4, 3) = ze_a;
@@ -196,8 +193,8 @@ void pose_estimator(
     // std::cout << std::fixed << std::setprecision(2) << ze << std::endl << std::endl; 
 
     // calculate H = Jacobi(h, xe)
-    Eigen::MatrixXf H(10, 25);
-    H.setZero(10, 25);
+    Eigen::MatrixXf H(10, 16);
+    H.setZero(10, 16);
 
     // Jacobi(ze_d, xe_p)
     H.block(0, 0, 1, 3) = Eigen::MatrixXf(2 * (xe_p - ap0)).transpose();
@@ -210,23 +207,20 @@ void pose_estimator(
     R_xe_q = (sqr(xe_q.w()) - xe_q.vec().squaredNorm()) * Eigen::Matrix3f::Identity() +
         2 * Eigen::MatrixXf(xe_q.vec()) * Eigen::MatrixXf(xe_q.vec()).transpose() +
         - 2 * xe_q.w() * crossMatrix(xe_q.vec());
-    // Jacobi(ze_a, xe_a, xe_ba, xe_g)
+    // Jacobi(ze_a, xe_a)
     H.block(4, 10, 3, 3) = R_xe_q;
-    H.block(4, 16, 3, 3) = Eigen::Matrix3f::Identity();
-    H.block(4, 22, 3, 3) = R_xe_q;
     
     // Jacobi(ze_a, xe_q)
-    H.block(4, 3, 3, 1) = 2 * (xe_q.w() * Eigen::Matrix3f::Identity() - crossMatrix(xe_q.vec())) * (xe_a + xe_ba + xe_g);
-    Eigen::Vector3f a_w = xe_a + xe_g;
+    H.block(4, 3, 3, 1) = 2 * (xe_q.w() * Eigen::Matrix3f::Identity() - crossMatrix(xe_q.vec())) * (xe_a + g);
+    Eigen::Vector3f a_w = xe_a + g;
     H.block(4, 4, 3, 3) = 2 * a_w.dot(xe_q.vec()) * Eigen::Matrix3f::Identity() +
                           2 * xe_q.w() *crossMatrix(a_w) +
                           2 * Eigen::MatrixXf(xe_q.vec()) * Eigen::MatrixXf(a_w).transpose() - 
                           2 * Eigen::MatrixXf(a_w) * Eigen::MatrixXf(xe_q.vec()).transpose();
 
-    // Jacobi(ze_w, (xe_w, we_bw))
+    // Jacobi(ze_w, xe_w)
     H.block(7, 13, 3, 3) = R_xe_q;
-    H.block(7, 19, 3, 3) = Eigen::Matrix3f::Identity();
-
+    
     // Jacobi(ze_w, xe_q)
     H.block(4, 4, 3, 3) = 2 * xe_w.dot(xe_q.vec()) * Eigen::Matrix3f::Identity() +
                           2 * xe_q.w() *crossMatrix(xe_w) +
@@ -241,18 +235,14 @@ void pose_estimator(
     Eigen::MatrixXf S = H * Pe * H.transpose() + R;
     Eigen::MatrixXf K = Pe * H.transpose() * S.inverse();
     
+
     p       = xe_p       +  K.block( 0, 0, 3, 10) * y;
     q.w()   = xe_q.w()   + (K.block( 3, 0, 1, 10) * y)(0);
     q.vec() = xe_q.vec() +  K.block( 4, 0, 3, 10) * y;
     v       = xe_v       +  K.block( 7, 0, 3, 10) * y;
     a       = xe_a       +  K.block(10, 0, 3, 10) * y;
     w       = xe_w       +  K.block(13, 0, 3, 10) * y;
-    ba      = xe_ba      +  K.block(16, 0, 3, 10) * y;
-    bw      = xe_bw      +  K.block(19, 0, 3, 10) * y;
-    g       = xe_g       +  K.block(22, 0, 3, 10) * y;
 
-    ba << 0, 0, 0;
-    bw << 0, 0, 0;
     // g << 0, 0, 9.8;
 
     // std::cout << "==================== Matrix K ========================" << std::endl;
@@ -267,13 +257,10 @@ void pose_estimator(
     std::cout << "v:" << std::fixed << std::setprecision(2) << Eigen::MatrixXf(v).transpose() << std::endl;
     std::cout << "a:" << std::fixed << std::setprecision(2) << Eigen::MatrixXf(a).transpose() << std::endl;
     std::cout << "w:" << std::fixed << std::setprecision(2) << Eigen::MatrixXf(w).transpose() << std::endl;
-    std::cout << "ba:" << std::fixed << std::setprecision(2) << Eigen::MatrixXf(ba).transpose() << std::endl;
-    std::cout << "bw:" << std::fixed << std::setprecision(2) << Eigen::MatrixXf(bw).transpose() << std::endl;
-    std::cout << "g:" << std::fixed << std::setprecision(2) << Eigen::MatrixXf(g).transpose() << std::endl;
     
     q = q.normalized();
     
-    P = (Eigen::MatrixXf::Identity(25, 25) - K * H) * Pe;
+    P = (Eigen::MatrixXf::Identity(16, 16) - K * H) * Pe;
 
     // std::cout << "==================== Matrix New P ========================" << std::endl;
     // std::cout << std::fixed << std::setprecision(2) << P << std::endl << std::endl;
@@ -299,27 +286,23 @@ void pose_estimator(
     states_msg.angular_velocity.x = w.x();
     states_msg.angular_velocity.y = w.y();
     states_msg.angular_velocity.z = w.z();
-    states_msg.bias_linear_acceleration.x = ba.x();
-    states_msg.bias_linear_acceleration.y = ba.y();
-    states_msg.bias_linear_acceleration.z = ba.z();
-    states_msg.bias_angular_velocity.x = bw.x();
-    states_msg.bias_angular_velocity.y = bw.y();
-    states_msg.bias_angular_velocity.z = bw.z();
-    states_msg.gravity.x = g.x();
-    states_msg.gravity.y = g.y();
-    states_msg.gravity.z = g.z();
     
     states_pub.publish(states_msg);
 
     last_time = curr_time;
 
-    // while(ros::ok());
 }
 
 void imuCallback(const sensor_msgs::Imu::ConstPtr& msg)
 {
     sensor_msgs::Imu data;
+
     data = *msg;
+    
+    data.angular_velocity.x -= bw(0);
+    data.angular_velocity.y -= bw(1);
+    data.angular_velocity.z -= bw(2);
+    
     imu_datas.push_back(data);
     // ROS_INFO("imu time stamp: %lf", data.header.stamp.toSec());
     // ROS_INFO("linear acceleration: %f %f %f", data.linear_acceleration.x, data.linear_acceleration.y, data.linear_acceleration.z);
@@ -338,7 +321,7 @@ void imuCallback(const sensor_msgs::Imu::ConstPtr& msg)
     linear_acceleration << data.linear_acceleration.x, data.linear_acceleration.y, data.linear_acceleration.z;
     angular_velocity << data.angular_velocity.x, data.angular_velocity.y, data.angular_velocity.z;
     R.setZero(10, 10);
-    R.block(0, 0, 4, 4) = 2 * Eigen::MatrixXf::Identity(4, 4);
+    R.block(0, 0, 4, 4) = 100 * Eigen::MatrixXf::Identity(4, 4);
     R.block(4, 4, 3, 3) = 0.1 * Eigen::MatrixXf::Identity(3, 3);
     R.block(7, 7, 3, 3) = 0.001 * Eigen::MatrixXf::Identity(3, 3);
 
@@ -350,8 +333,8 @@ void uwbCallback(const uav::UWB::ConstPtr& msg)
     uav::UWB data;
     data = *msg;
     uwb_datas.push_back(data);
-    ROS_INFO("uwb time stamp: %lf", data.header.stamp.toSec());
-    ROS_INFO("uwb distance: %f %f %f %f", data.d0, data.d1, data.d2, data.d3);
+    // ROS_INFO("uwb time stamp: %lf", data.header.stamp.toSec());
+    // ROS_INFO("uwb distance: %f %f %f %f", data.d0, data.d1, data.d2, data.d3);
      
     Eigen::Vector4f uwb_distance;
     Eigen::Vector3f linear_acceleration;
@@ -369,8 +352,8 @@ void uwbCallback(const uav::UWB::ConstPtr& msg)
     
     R.setZero(10, 10);
     R.block(0, 0, 4, 4) = 0.01 * Eigen::MatrixXf::Identity(4, 4);
-    R.block(4, 4, 3, 3) = 2 * Eigen::MatrixXf::Identity(3, 3);
-    R.block(7, 7, 3, 3) = 2 * Eigen::MatrixXf::Identity(3, 3);
+    R.block(4, 4, 3, 3) = 10 * Eigen::MatrixXf::Identity(3, 3);
+    R.block(7, 7, 3, 3) = 10 * Eigen::MatrixXf::Identity(3, 3);
 
     pose_estimator(data.header.stamp.toSec(), uwb_distance, linear_acceleration, angular_velocity, R);
 }

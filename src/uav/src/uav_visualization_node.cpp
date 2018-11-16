@@ -26,6 +26,10 @@ void drawUav(Eigen::Vector3f position, Eigen::Quaternion<float> orientation, Eig
 {
     orientation.normalized();
 
+    // do not use orientation
+    // orientation.w() = 1;
+    // orientation.vec() << 0, 0, 0;
+
     glColor3f(color(0), color(1), color(2));
     Eigen::Matrix3f R = orientation.toRotationMatrix();
     

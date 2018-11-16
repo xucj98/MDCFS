@@ -57,11 +57,11 @@ int main(int argc, char** argv)
     ros::Publisher imu_pub = n.advertise<sensor_msgs::Imu>("imu", 1000);
     ros::Publisher uwb_pub = n.advertise<uav::UWB>("uwb", 1000);
 
-    ros::Rate loop_rate(10); 
+    ros::Rate loop_rate(10000); 
 
     size_t Buffer_length=0; //buffer数组长度
     int state=0;            //数据状态
-    uint8_t buffer[10240];
+    uint8_t buffer[1024000];
 
     while(ros::ok()) 
     { 
@@ -92,15 +92,17 @@ int main(int argc, char** argv)
                     else Buffer_length=0;
                     break;
                 case 1:
-                    if(buffer[1]==0x0C) state=2;
-                    else 
+                    if((buffer[1]==0x0C || buffer[1]==0x0B) && Buffer_length>=2) state=2;
+                    else if(Buffer_length>=2)
                     {
                         state=0;
                         Buffer_length=0;
                     }
                     break;
                 case 2:
-                    if(Buffer_length<30) 
+                    if(buffer[1]==0x0C)
+                    {
+                    if(Buffer_length<14) 
                     {}
                     else
                     {    
@@ -116,29 +118,42 @@ int main(int argc, char** argv)
                          uwb.d2 = ((float)((buffer[10]<<8)+buffer[11]))/1000;
                          uwb.d3 = ((float)((buffer[12]<<8)+buffer[13]))/1000;
                          
-                         ROS_INFO("%f %f %f %f",uwb.d0,uwb.d1,uwb.d2,uwb.d3);
+                         ROS_INFO("UWB:%f %f %f %f",uwb.d0,uwb.d1,uwb.d2,uwb.d3);
 
-                         temp_time=(buffer[14]<<24)+(buffer[15]<<16)+(buffer[16]<<8)+buffer[17];
-                        ROS_INFO("%ld",temp_time);
-                        sensor_msgs::Imu imu;
-                        imu.header.stamp = ros::Time(temp_time);
-
-                        imu.linear_acceleration.x = ((short)((buffer[18]<<8)+buffer[19]))/1000.0;
-                        imu.linear_acceleration.y = ((short)((buffer[20]<<8)+buffer[21]))/1000.0;
-                        imu.linear_acceleration.z = ((short)((buffer[22]<<8)+buffer[23]))/1000.0;
-
-                        imu.angular_velocity.x = ((short)((buffer[24]<<8)+buffer[25]))/1000.0;
-                        imu.angular_velocity.y = ((short)((buffer[26]<<8)+buffer[27]))/1000.0;
-                        imu.angular_velocity.z = ((short)((buffer[28]<<8)+buffer[29]))/1000.0;
-
-                        imu_pub.publish(imu);
+                         
                         uwb_pub.publish(uwb);
                         
-                        ROS_INFO("%d",Buffer_length);
-                        ROS_INFO("receive %f %f %f",imu.linear_acceleration.x,imu.linear_acceleration.y,imu.linear_acceleration.z);
-                        ROS_INFO("receive %f %f %f",imu.angular_velocity.x,imu.angular_velocity.y,imu.angular_velocity.z);
                         state=0;
                         Buffer_length=0;
+                     }
+                    }
+                    else if(buffer[1]==0x0B)
+                    {
+                        if(Buffer_length<18) 
+                        {}
+                        else
+                        {   
+                        long long temp_time2=(buffer[2]<<24)+(buffer[3]<<16)+(buffer[4]<<8)+buffer[5];
+                        ROS_INFO("%lld",temp_time2);
+                       
+                        sensor_msgs::Imu imu;
+                        imu.header.stamp = ros::Time(temp_time2);
+
+                        imu.linear_acceleration.x = ((short)((buffer[6]<<8)+buffer[7]))/1000.0;
+                        imu.linear_acceleration.y = ((short)((buffer[8]<<8)+buffer[9]))/1000.0;
+                        imu.linear_acceleration.z = ((short)((buffer[10]<<8)+buffer[11]))/1000.0;
+
+                        imu.angular_velocity.x = ((short)((buffer[12]<<8)+buffer[13]))/1000.0;
+                        imu.angular_velocity.y = ((short)((buffer[14]<<8)+buffer[15]))/1000.0;
+                        imu.angular_velocity.z = ((short)((buffer[16]<<8)+buffer[17]))/1000.0;
+
+                        imu_pub.publish(imu);
+
+                        ROS_INFO("Acc:receive %f %f %f",imu.linear_acceleration.x,imu.linear_acceleration.y,imu.linear_acceleration.z);
+                        ROS_INFO("Ang:receive %f %f %f",imu.angular_velocity.x,imu.angular_velocity.y,imu.angular_velocity.z);
+                          state=0;
+                          Buffer_length=0;
+                          }
                     }
                     break;
                 default: break;

@@ -30,81 +30,120 @@ int main(int argc, char** argv)
     sp.setPort(sp_name); 
     sp.setBaudrate(115200); 
     sp.setTimeout(to); 
-    // try 
-    // { 
-    //     sp.open(); 
-    // } 
-    // catch(serial::IOException& e) 
-    // { 
-    //     ROS_ERROR_STREAM("Unable to open port."); 
-    //     return -1; 
-    // } 
+    try 
+    { 
+        sp.open(); 
+    } 
+    catch(serial::IOException& e) 
+    { 
+        ROS_ERROR_STREAM("Unable to open port."); 
+        return -1; 
+    } 
     
-    // if(sp.isOpen()) 
-    // { 
-    //     ROS_INFO("%s is opened.", sp_name.c_str()); 
-    // } else 
-    // { 
-    //     return -1; 
-    // } 
+    if(sp.isOpen()) 
+    { 
+        ROS_INFO("%s is opened.", sp_name.c_str()); 
+    } else 
+    { 
+        return -1; 
+    } 
 
     //创建一个发布者用于发布串口接收到的数据
     ros::Publisher serial_pub = n.advertise<std_msgs::UInt8>("receive", 1000);
     //创建一个订阅者用于订阅需要发往无人机的数据
     ros::Subscriber serial_sub = n.subscribe("transmit", 1000, transmitCallback);
+    
     //创建一个发布者用于发布IMU信息
     ros::Publisher imu_pub = n.advertise<sensor_msgs::Imu>("imu", 1000);
     ros::Publisher uwb_pub = n.advertise<uav::UWB>("uwb", 1000);
 
-    ros::Rate loop_rate(20); 
+    ros::Rate loop_rate(10); 
+
+    size_t Buffer_length=0; //buffer数组长度
+    int state=0;            //数据状态
+    uint8_t buffer[1024];
+
     while(ros::ok()) 
     { 
-        //获取缓冲区内的字节数 
-        // size_t n = sp.available(); 
-        size_t n = 0;
-        if(n!=0) 
+             
+        size_t n = sp.available(); 
+    
+        if(1) 
         { 
-            uint8_t buffer[1024];
-            
-            //读出数据 
-            n = sp.read(buffer, n);
-            buffer[n] = '\0';
-            
-            //类型转换
-            std::string str((char*)buffer);
-            std::stringstream ss;
-            ss << str; 
-            std_msgs::String msg; 
-            msg.data = ss.str();
-            
-            ROS_INFO("receive %s", msg.data.c_str());
-            serial_pub.publish(msg);
-            
-            // sp.write(buffer, n); 
+            n= sp.read(&buffer[Buffer_length], n); 
+            Buffer_length+=n;
+
+            // std::string str((char*)buffer);
+            // std::stringstream ss;
+            // ss << str; 
+            // std_msgs::String msg; 
+            // msg.data = ss.str();            
+            // ROS_INFO("receive %s", msg.data.c_str());
+
+            // for(int j=0;j<Buffer_length;j++)
+            // {          
+            // ROS_INFO("receive %x",buffer[j]);
+            // }
+            switch(state)
+            {
+                case 0:
+                    if(buffer[0]==0x0A) state=1;
+                    else Buffer_length=0;
+                    break;
+                case 1:
+                    if(buffer[1]==0x0C) state=2;
+                    else 
+                    {
+                        state=0;
+                        Buffer_length=0;
+                    }
+                    break;
+                case 2:
+                    if(Buffer_length<30) 
+                    {}
+                    else
+                    {    
+                         uav::UWB uwb;
+
+                         long temp_time=(buffer[2]<<24)+(buffer[3]<<16)+(buffer[4]<<8)+buffer[5];
+
+                         ROS_INFO("%ld",temp_time);
+                         uwb.header.stamp = ros::Time(temp_time);
+
+                         uwb.d0 = ((float)((buffer[6]<<8)+buffer[7]))/1000;
+                         uwb.d1 = ((float)((buffer[8]<<8)+buffer[9]))/1000;
+                         uwb.d2 = ((float)((buffer[10]<<8)+buffer[11]))/1000;
+                         uwb.d3 = ((float)((buffer[12]<<8)+buffer[13]))/1000;
+                         
+                         ROS_INFO("%f %f %f %f",uwb.d0,uwb.d1,uwb.d2,uwb.d3);
+
+                         temp_time=(buffer[14]<<24)+(buffer[15]<<16)+(buffer[16]<<8)+buffer[17];
+                        ROS_INFO("%ld",temp_time);
+                        sensor_msgs::Imu imu;
+                        imu.header.stamp = ros::Time(temp_time);
+
+                        imu.linear_acceleration.x = ((short)((buffer[18]<<8)+buffer[19]))/1000.0;
+                        imu.linear_acceleration.y = ((short)((buffer[20]<<8)+buffer[21]))/1000.0;
+                        imu.linear_acceleration.z = ((short)((buffer[22]<<8)+buffer[23]))/1000.0;
+
+                        imu.angular_velocity.x = ((short)((buffer[24]<<8)+buffer[25]))/1000.0;
+                        imu.angular_velocity.y = ((short)((buffer[26]<<8)+buffer[27]))/1000.0;
+                        imu.angular_velocity.z = ((short)((buffer[28]<<8)+buffer[29]))/1000.0;
+
+                        imu_pub.publish(imu);
+                        uwb_pub.publish(uwb);
+                        
+                        ROS_INFO("%d",Buffer_length);
+                        ROS_INFO("receive %f %f %f",imu.linear_acceleration.x,imu.linear_acceleration.y,imu.linear_acceleration.z);
+                        ROS_INFO("receive %f %f %f",imu.angular_velocity.x,imu.angular_velocity.y,imu.angular_velocity.z);
+                        state=0;
+                        Buffer_length=0;
+                    }
+                    break;
+                default: break;
+            }
         } 
-        
-        sensor_msgs::Imu imu;
-        imu.header.stamp = ros::Time(1032);
-
-        imu.linear_acceleration.x = 1.0;
-        imu.linear_acceleration.y = 2.0;
-        imu.linear_acceleration.z = 1.0;
-
-        imu.angular_velocity.x = 0.01;
-        imu.angular_velocity.y = 0.02;
-        imu.angular_velocity.z = 0.03;
-        
-        imu_pub.publish(imu);
-
-        uav::UWB uwb;
-        uwb.header.stamp = ros::Time(11032);
-        uwb.d0 = 30;
-        uwb.d1 = 50;
-        uwb.d2 = 30;
-        uwb.d3 = 50;
-
-        uwb_pub.publish(uwb);
-
+    
         ros::spinOnce();
         loop_rate.sleep(); 
     } 

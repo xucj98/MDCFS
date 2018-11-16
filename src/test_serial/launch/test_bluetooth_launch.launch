@@ -2,9 +2,9 @@
     <node pkg="test_serial" name="sp_1" type="test_serial_node" output="screen">
         <param name="sp_name" type="str" value="/dev/ttyUSB0" /> 
     </node>
-    <node pkg="test_serial" name="sp_2" type="test_serial_node" output="screen">
+    <!--<node pkg="test_serial" name="sp_2" type="test_serial_node" output="screen">
         <param name="sp_name" type="str" value="/dev/rfcomm0" /> 
-    </node>
+    </node>-->
     
     <!--<group ns="sp_2">
         <node pkg="test_serial" name="sp" type="test_serial_node">

@@ -108,20 +108,20 @@ int main(int argc, char** argv)
 
                          long temp_time=(buffer[2]<<24)+(buffer[3]<<16)+(buffer[4]<<8)+buffer[5];
 
-                         ROS_INFO("%ld",temp_time);
-                         uwb.header.stamp = ros::Time(temp_time);
+                        //  ROS_INFO("time stamp: %ld",temp_time);
+                         uwb.header.stamp = ros::Time((float)temp_time/1000);
 
                          uwb.d0 = ((float)((buffer[6]<<8)+buffer[7]))/1000;
                          uwb.d1 = ((float)((buffer[8]<<8)+buffer[9]))/1000;
                          uwb.d2 = ((float)((buffer[10]<<8)+buffer[11]))/1000;
                          uwb.d3 = ((float)((buffer[12]<<8)+buffer[13]))/1000;
                          
-                         ROS_INFO("%f %f %f %f",uwb.d0,uwb.d1,uwb.d2,uwb.d3);
+                        //  ROS_INFO("uwb distance: %f %f %f %f",uwb.d0,uwb.d1,uwb.d2,uwb.d3);
 
                          temp_time=(buffer[14]<<24)+(buffer[15]<<16)+(buffer[16]<<8)+buffer[17];
-                        ROS_INFO("%ld",temp_time);
+                        // ROS_INFO("%ld",temp_time);
                         sensor_msgs::Imu imu;
-                        imu.header.stamp = ros::Time(temp_time);
+                        imu.header.stamp = ros::Time((float)temp_time/1000);
 
                         imu.linear_acceleration.x = ((short)((buffer[18]<<8)+buffer[19]))/1000.0;
                         imu.linear_acceleration.y = ((short)((buffer[20]<<8)+buffer[21]))/1000.0;
@@ -134,9 +134,9 @@ int main(int argc, char** argv)
                         imu_pub.publish(imu);
                         uwb_pub.publish(uwb);
                         
-                        ROS_INFO("%d",Buffer_length);
-                        ROS_INFO("receive %f %f %f",imu.linear_acceleration.x,imu.linear_acceleration.y,imu.linear_acceleration.z);
-                        ROS_INFO("receive %f %f %f",imu.angular_velocity.x,imu.angular_velocity.y,imu.angular_velocity.z);
+                        // ROS_INFO("%d",Buffer_length);
+                        // ROS_INFO("linear_acceleration: %f %f %f",imu.linear_acceleration.x,imu.linear_acceleration.y,imu.linear_acceleration.z);
+                        // ROS_INFO("angular_velocity: %f %f %f",imu.angular_velocity.x,imu.angular_velocity.y,imu.angular_velocity.z);
                         state=0;
                         Buffer_length=0;
                     }

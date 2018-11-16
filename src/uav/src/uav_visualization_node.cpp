@@ -102,6 +102,11 @@ int main(int argc, char **argv)
     ros::NodeHandle n;
     ros::NodeHandle np("~");
 
+    short test = -27430;
+    unsigned char a = test >> 8, b = test & 0xFF;
+    std::cout << test << ' ' << (int)a << ' ' << (int)b << ' ' << ((a << 8) + b) << std::endl;  
+
+
     int uav_count;
     np.param<int>("uav_count", uav_count, 3);
 
@@ -126,7 +131,7 @@ int main(int argc, char **argv)
     glEnable(GL_DEPTH_TEST);
     pangolin::OpenGlRenderState s_cam(
         pangolin::ProjectionMatrix(1080,720,520,520,540,360,0.2,100),
-        pangolin::ModelViewLookAt(-2, -2, 1.3, 0, 0, 1.5, pangolin::AxisZ)
+        pangolin::ModelViewLookAt(-2, -2, 1, 0, 0, 1.5, pangolin::AxisZ)
     );
     pangolin::Handler3D handler(s_cam);
     pangolin::View& d_cam = pangolin::CreateDisplay()

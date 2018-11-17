@@ -10,10 +10,13 @@ const float bladelength = 0.14;
 const float ctrllength = 0.05;
 const float pi = 3.14;
 
+std::vector<bool> getInof;
 std::vector<Eigen::Vector3f> positions;
 std::vector<Eigen::Quaternion<float> > orientations;
 std::vector<Eigen::Vector3f> colors;
 std::vector<ros::Subscriber> uavs_states_sub;
+std::vector<ros::Subscriber> uavs_states_ref_sub;
+
 
 void drawGround()
 {
@@ -90,6 +93,7 @@ void drawUav(Eigen::Vector3f position, Eigen::Quaternion<float> orientation, Eig
 
 void uavStatesSubCallback(const uav::uav_states::ConstPtr& states, int uav_id)
 {
+    getInof[uav_id] = true;
     positions[uav_id].x() = states->position.x;
     positions[uav_id].y() = states->position.y;
     positions[uav_id].z() = states->position.z;
@@ -109,12 +113,14 @@ int main(int argc, char **argv)
     int uav_count;
     np.param<int>("uav_count", uav_count, 3);
 
-    colors.resize(uav_count);
+    getInof.resize(uav_count * 2);
+    colors.resize(uav_count * 2);
+    uavs_states_ref_sub.resize(uav_count);
     uavs_states_sub.resize(uav_count);
-    positions.resize(uav_count);
-    orientations.resize(uav_count);
+    positions.resize(uav_count * 2);
+    orientations.resize(uav_count * 2);
 
-    for (int i = 0; i < uav_count; i++)
+    for (int i = 0; i < uav_count * 2; i++)
     {
         positions[i] << i, 0, 0;
         orientations[i].w() = 1;
@@ -122,19 +128,24 @@ int main(int argc, char **argv)
         colors[i](0) = (float)(rand() % 256) / 256;
         colors[i](1) = (float)(rand() % 256) / 256;
         colors[i](2) = (float)(rand() % 256) / 256;
+        getInof[i] = false;
+    }
+    for (int i = 0; i < uav_count; i++)
+    {
         uavs_states_sub[i] = n.subscribe("uav_" + std::to_string(i) + "/states", 1000, boost::function<void (const uav::uav_states::ConstPtr&)>(boost::bind(uavStatesSubCallback, _1, i)));
+        uavs_states_ref_sub[i] = n.subscribe("uav_" + std::to_string(i) + "/states_ref", 1000, boost::function<void (const uav::uav_states::ConstPtr&)>(boost::bind(uavStatesSubCallback, _1, i + uav_count)));
     } 
 
     // init pangolin
-    pangolin::CreateWindowAndBind("Main",1080,720);
+    pangolin::CreateWindowAndBind("Main", 1080, 720);
     glEnable(GL_DEPTH_TEST);
     pangolin::OpenGlRenderState s_cam(
-        pangolin::ProjectionMatrix(1080,720,520,520,540,360,0.2,100),
+        pangolin::ProjectionMatrix(1080, 720, 520, 520, 540, 360, 0.2, 100),
         pangolin::ModelViewLookAt(-2, -2, 1, 0, 0, 1.5, pangolin::AxisZ)
     );
     pangolin::Handler3D handler(s_cam);
     pangolin::View& d_cam = pangolin::CreateDisplay()
-            .SetBounds(0.0, 1.0, 0.0, 1.0, -1080.0f/720.0f)
+            .SetBounds(0.0, 1.0, 0.0, 1.0, -1080.0f / 720.0f)
             .SetHandler(&handler);
 
     while(ros::ok())
@@ -145,8 +156,9 @@ int main(int argc, char **argv)
 
         drawGround();
     
-        for (int i = 0; i < uav_count; i++)
-            drawUav(positions[i], orientations[i], colors[i]);
+        for (int i = 0; i < uav_count * 2; i++)
+            if (getInof[i])
+                drawUav(positions[i], orientations[i], colors[i]);
         
         // Swap frames and Process Events
         pangolin::FinishFrame();

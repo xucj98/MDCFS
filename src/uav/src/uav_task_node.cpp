@@ -37,17 +37,17 @@ int main(int argc, char** argv)
     //创建一个发布者用于发布给无人机的命令
     ros::Publisher task_pub = n.advertise<uav::task_position>("task", 1000);
 
-    ros::Rate loop_rate(100); 
+    ros::Rate loop_rate(1); 
     while(ros::ok()) 
     { 
         uav::task_position Target_Position;
         //ROS_INFO("1");
-        Target_Position.x=2;
-        Target_Position.y=1;
-        Target_Position.z=0.5;
+        Target_Position.x=3;
+        Target_Position.y=3;
+        Target_Position.z=1;
         task_pub.publish(Target_Position);
 
-        ROS_INFO("1");
+        //ROS_INFO("1");
         ros::spinOnce();
         loop_rate.sleep(); 
     } 

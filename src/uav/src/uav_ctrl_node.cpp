@@ -112,7 +112,7 @@ int main(int argc, char** argv)
     ros::Publisher command_pub = n.advertise<std_msgs::UInt8>("command", 1000);
     std_msgs::UInt8 Command;
 
-    ros::Rate loop_rate(1000); 
+    ros::Rate loop_rate(10); 
 
     // Now_Position[0]=2;
     // Now_Position[1]=2;
@@ -127,20 +127,20 @@ int main(int argc, char** argv)
        //ROS_INFO("%f %f %f",euler[0],euler[1],euler[2]);
     
        //ROS_INFO("%f",atan(-1));
-        if(Target_Position[2]-Now_Position[2]>0.1)
-        {
-            Command.data=0xA6;
-            //ROS_INFO("Go Up");
-            command_pub.publish(Command);
-            sleep(0.05);
-        }
-        else if (Target_Position[2]-Now_Position[2]<-0.1)
-        {
-            Command.data=0xA7;
-            //ROS_INFO("Go Down");
-            command_pub.publish(Command);
-            sleep(0.05);
-        }
+        // if(Target_Position[2]-Now_Position[2]>0.07)
+        // {
+        //     Command.data=0xA6;
+        //   //  ROS_INFO("Go Up");
+        //     command_pub.publish(Command);
+        //     //sleep(0.05);
+        // }
+        // else if (Target_Position[2]-Now_Position[2]<-0.07)
+        // {
+        //     Command.data=0xA7;
+        //    // ROS_INFO("Go Down");
+        //     command_pub.publish(Command);
+        //     //sleep(0.05);
+        // }
       float Target_Angle;
       if(Distance(Now_Position[0],Now_Position[1],Target_Position[0],Target_Position[1])>0.1)
         {
@@ -153,22 +153,22 @@ int main(int argc, char** argv)
                 Command.data=0xA5; //右转
                 ROS_INFO("Go Right");
                 command_pub.publish(Command);
-                sleep(0.05);
+                //sleep(0.05);
             }
             else if(Min_BetAngle(My_Angle(2),Target_Angle)<-0.1)
             {
                 Command.data=0xA4; //左转
                 ROS_INFO("Go Left");
                 command_pub.publish(Command);
-                sleep(0.05);
+                //sleep(0.05);
             }
 
             if(Min_BetAngle(My_Angle(2),Target_Angle)<0.3 && Min_BetAngle(My_Angle(2),Target_Angle)>-0.3)
             {
                 Command.data=0xA0; //前进
-                ROS_INFO("Go Forward");
+     //           ROS_INFO("Go Forward");
                 command_pub.publish(Command);
-                sleep(0.05);
+                //sleep(0.05);
             }
 
             //ROS_INFO("%f",Target_Angle);

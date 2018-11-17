@@ -8,7 +8,7 @@
 const Eigen::Vector3f ap0(   0,    0,  2.4);
 const Eigen::Vector3f ap1( 5.1,  0.2,  2.3);
 const Eigen::Vector3f ap2( 5.3,  4.3,  2.5);
-const Eigen::Vector3f ap3( 0.3,  2.5,  0.8);
+const Eigen::Vector3f ap3( -0.6, 4.0,  1.4);
 
 #define sqr(x) ((x)*(x))
 
@@ -298,18 +298,18 @@ void pose_estimator(
     // std::cout << "==================== Matrix K ========================" << std::endl;
     // std::cout << std::fixed << std::setprecision(2) << K << std::endl << std::endl;
 
-    std::cout << "==================== residue ========================" << std::endl;
-    std::cout << std::fixed << std::setprecision(3) << Eigen::MatrixXf(y).transpose() << std::endl << std::endl;
+    // std::cout << "==================== residue ========================" << std::endl;
+    // std::cout << std::fixed << std::setprecision(3) << Eigen::MatrixXf(y).transpose() << std::endl << std::endl;
 
-    std::cout << "==================== Matrix new states ========================" << std::endl;
+    // std::cout << "==================== Matrix new states ========================" << std::endl;
     // std::cout << "p:" << std::fixed << std::setprecision(2) << p << std::endl << std::endl;
     // std::cout << "q:" << std::fixed << std::setprecision(2) << q.toRotationMatrix().eulerAngles() << std::endl << std::endl;
-    std::cout << "v:" << std::fixed << std::setprecision(2) << Eigen::MatrixXf(v).transpose() << std::endl;
-    std::cout << "a:" << std::fixed << std::setprecision(2) << Eigen::MatrixXf(a).transpose() << std::endl;
-    std::cout << "w:" << std::fixed << std::setprecision(2) << Eigen::MatrixXf(w).transpose() << std::endl;
-    std::cout << "ba:" << std::fixed << std::setprecision(2) << Eigen::MatrixXf(ba).transpose() << std::endl;
-    std::cout << "bw:" << std::fixed << std::setprecision(2) << Eigen::MatrixXf(bw).transpose() << std::endl;
-    std::cout << "g:" << std::fixed << std::setprecision(2) << Eigen::MatrixXf(g).transpose() << std::endl;    
+    // std::cout << "v:" << std::fixed << std::setprecision(2) << Eigen::MatrixXf(v).transpose() << std::endl;
+    // std::cout << "a:" << std::fixed << std::setprecision(2) << Eigen::MatrixXf(a).transpose() << std::endl;
+    // std::cout << "w:" << std::fixed << std::setprecision(2) << Eigen::MatrixXf(w).transpose() << std::endl;
+    // std::cout << "ba:" << std::fixed << std::setprecision(2) << Eigen::MatrixXf(ba).transpose() << std::endl;
+    // std::cout << "bw:" << std::fixed << std::setprecision(2) << Eigen::MatrixXf(bw).transpose() << std::endl;
+    // std::cout << "g:" << std::fixed << std::setprecision(2) << Eigen::MatrixXf(g).transpose() << std::endl;    
      
     P = (Eigen::MatrixXf::Identity(25, 25) - K * H) * Pe;
 
@@ -318,8 +318,8 @@ void pose_estimator(
 
     ROS_INFO("position: %0.4f %0.4f %0.4f", p.x(), p.y(), p.z()); 
     eulerAngles = q.toRotationMatrix().eulerAngles(2, 1, 0);
-    ROS_INFO("orientation: %0.4f %0.4f %0.4f", eulerAngles(0), eulerAngles(1), eulerAngles(2));
-    std::cout << "acceleration in world frame: " << std::fixed << std::setprecision(4) << Eigen::MatrixXf((q * zo_a_q * q.inverse()).vec()).transpose() << std::endl;
+    // ROS_INFO("orientation: %0.4f %0.4f %0.4f", eulerAngles(0), eulerAngles(1), eulerAngles(2));
+    // std::cout << "acceleration in world frame: " << std::fixed << std::setprecision(4) << Eigen::MatrixXf((q * zo_a_q * q.inverse()).vec()).transpose() << std::endl;
 
     uav::uav_states states_msg;
     states_msg.position.x = p.x();

@@ -50,6 +50,7 @@ include_directories(${Pangolin_INCLUDE_DIRS})
 
 ## Generate messages in the 'msg' folder
 add_message_files(FILES
+  baro.msg
   task_position.msg
   uav_states.msg
   UWB.msg

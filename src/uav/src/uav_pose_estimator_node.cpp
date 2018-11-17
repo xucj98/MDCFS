@@ -52,6 +52,8 @@ Eigen::Matrix3f crossMatrix(Eigen::Vector3f w)
 void pose_estimator(
     float curr_time, 
     Eigen::Vector4f uwb_d,
+    Eigen::Vector3f imu_a,
+    Eigen::Vector3f imu_w,
     Eigen::MatrixXf R)
 {
     static int uwb_init_cnt = 0;

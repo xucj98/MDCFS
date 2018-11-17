@@ -234,3 +234,11 @@ add_dependencies(uav_ctrl_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPO
 target_link_libraries(uav_ctrl_node
   ${catkin_LIBRARIES}
 )
+
+add_executable(uav_length_simulate_node
+  src/uav_length_simulate_node.cpp
+)
+add_dependencies(uav_length_simulate_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(uav_length_simulate_node
+  ${catkin_LIBRARIES}
+)

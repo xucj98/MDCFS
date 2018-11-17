@@ -81,14 +81,14 @@ void pose_estimator(
 
             Q.setZero(25, 25);
             Q = 0.01 * Eigen::MatrixXf::Identity(25, 25);
-            Q.block( 0,  0, 3, 3) = 0.1    * Eigen::Matrix3f::Identity();
-            Q.block( 3,  3, 4, 4) = 0.001   * Eigen::Matrix4f::Identity();
-            Q.block( 7,  7, 3, 3) = 0.1    * Eigen::Matrix3f::Identity();
-            Q.block(10, 10, 3, 3) = 0.2    * Eigen::Matrix3f::Identity();
-            Q.block(13, 13, 3, 3) = 0.2    * Eigen::Matrix3f::Identity();
-            Q.block(16, 16, 3, 3) = 0.000  * Eigen::Matrix3f::Identity();
-            Q.block(19, 19, 3, 3) = 0.00   * Eigen::Matrix3f::Identity();
-            Q.block(22, 22, 3, 3) = 0.0001 * Eigen::Matrix3f::Identity();
+            Q.block( 0,  0, 3, 3) = Eigen::Matrix3f::Identity() * 0.1; 
+            Q.block( 3,  3, 4, 4) = Eigen::Matrix4f::Identity() * 0.001;
+            Q.block( 7,  7, 3, 3) = Eigen::Matrix3f::Identity() * 0.1;
+            Q.block(10, 10, 3, 3) = Eigen::Matrix3f::Identity() * 0.2;
+            Q.block(13, 13, 3, 3) = Eigen::Matrix3f::Identity() * 0.2 ;
+            Q.block(16, 16, 3, 3) = Eigen::Matrix3f::Identity() * 0.00001;
+            Q.block(19, 19, 3, 3) = Eigen::Matrix3f::Identity() * 0.00001;
+            Q.block(22, 22, 3, 3) = Eigen::Matrix3f::Identity() * 0.00001;
 
             P.setZero(25, 25);
         }

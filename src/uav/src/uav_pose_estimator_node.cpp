@@ -146,8 +146,8 @@ void pose_estimator(
     // std::cout << "==================== Matrix K ========================" << std::endl;
     // std::cout << std::fixed << std::setprecision(2) << K << std::endl << std::endl;
 
-    std::cout << "==================== residue ========================" << std::endl;
-    std::cout << std::fixed << std::setprecision(2) << y << std::endl << std::endl;
+    // std::cout << "==================== residue ========================" << std::endl;
+    // std::cout << std::fixed << std::setprecision(2) << y << std::endl << std::endl;
  
     P = (Eigen::MatrixXf::Identity(3, 3) - K * H) * Pe;
 

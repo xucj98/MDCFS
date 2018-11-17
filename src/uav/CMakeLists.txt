@@ -50,6 +50,7 @@ include_directories(${Pangolin_INCLUDE_DIRS})
 
 ## Generate messages in the 'msg' folder
 add_message_files(FILES
+  task_position.msg
   uav_states.msg
   UWB.msg
 )
@@ -232,5 +233,13 @@ add_executable(uav_ctrl_node
 )
 add_dependencies(uav_ctrl_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(uav_ctrl_node
+  ${catkin_LIBRARIES}
+)
+
+add_executable(uav_task_node
+  src/uav_task_node.cpp
+)
+add_dependencies(uav_task_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(uav_task_node
   ${catkin_LIBRARIES}
 )

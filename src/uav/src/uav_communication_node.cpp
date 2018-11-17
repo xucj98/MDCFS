@@ -102,54 +102,65 @@ int main(int argc, char** argv)
                 case 2:
                     if(buffer[1]==0x0C)
                     {
-                    if(Buffer_length<14) 
+                    if(Buffer_length<15) 
                     {}
                     else
                     {    
                          uav::UWB uwb;
-
+                         uint8_t check=0;
+                         for(int j=0;j<14;j++)
+                         check+=buffer[j];
+                                            
+                        if(check==buffer[14])
+                        {
+                        //  ROS_INFO("time stamp: %ld",temp_time);
                          long temp_time=(buffer[2]<<24)+(buffer[3]<<16)+(buffer[4]<<8)+buffer[5];
 
-                        //  ROS_INFO("time stamp: %ld",temp_time);
                          uwb.header.stamp = ros::Time((float)temp_time/1000);
-
                          uwb.d0 = ((float)((buffer[6]<<8)+buffer[7]))/1000;
                          uwb.d1 = ((float)((buffer[8]<<8)+buffer[9]))/1000;
                          uwb.d2 = ((float)((buffer[10]<<8)+buffer[11]))/1000;
                          uwb.d3 = ((float)((buffer[12]<<8)+buffer[13]))/1000;
-                         
-                        //  ROS_INFO("UWB:%f %f %f %f",uwb.d0,uwb.d1,uwb.d2,uwb.d3);
 
-                         
+                          ROS_INFO("UWB:%f %f %f %f",uwb.d0,uwb.d1,uwb.d2,uwb.d3);                        
                         uwb_pub.publish(uwb);
-                        
+                        }
                         state=0;
                         Buffer_length=0;
                      }
                     }
                     else if(buffer[1]==0x0B)
                     {
-                        if(Buffer_length<14) 
+                        if(Buffer_length<19) 
                         {}
                         else
-                        {   
+                        {                          
+                         uint8_t check=0;
+                         for(int j=0;j<18;j++)
+                         check+=buffer[j];
+
+                        if(check==buffer[18])
+                        {
                         long long temp_time2=(buffer[2]<<24)+(buffer[3]<<16)+(buffer[4]<<8)+buffer[5];
                         // ROS_INFO("%lld",temp_time2);
                        
                         sensor_msgs::Imu imu;
                         imu.header.stamp = ros::Time((float)temp_time2/1000);
 
-                        imu.orientation.x = ((short)((buffer[6]<<8)+buffer[7]))/1000.0;
-                        imu.orientation.y = ((short)((buffer[8]<<8)+buffer[9]))/1000.0;
-                        imu.orientation.z = ((short)((buffer[10]<<8)+buffer[11]))/1000.0;
-                        imu.orientation.w = ((short)((buffer[12]<<8)+buffer[13]))/1000.0;
+                        imu.linear_acceleration.x = ((short)((buffer[6]<<8)+buffer[7]))/1000.0;
+                        imu.linear_acceleration.y = ((short)((buffer[8]<<8)+buffer[9]))/1000.0;
+                        imu.linear_acceleration.z = ((short)((buffer[10]<<8)+buffer[11]))/1000.0;
+
+                        imu.angular_velocity.x = ((short)((buffer[12]<<8)+buffer[13]))/1000.0;
+                        imu.angular_velocity.y = ((short)((buffer[14]<<8)+buffer[15]))/1000.0;
+                        imu.angular_velocity.z = ((short)((buffer[16]<<8)+buffer[17]))/1000.0;                        
 
 
                         imu_pub.publish(imu);
 
-                        // ROS_INFO("Acc:receive %f %f %f",imu.linear_acceleration.x,imu.linear_acceleration.y,imu.linear_acceleration.z);
-                        // ROS_INFO("Ang:receive %f %f %f",imu.angular_velocity.x,imu.angular_velocity.y,imu.angular_velocity.z);
-
+                         //ROS_INFO("Acc:receive %f %f %f",imu.linear_acceleration.x,imu.linear_acceleration.y,imu.linear_acceleration.z);
+                         //ROS_INFO("Ang:receive %f %f %f",imu.angular_velocity.x,imu.angular_velocity.y,imu.angular_velocity.z);
+                        }
                           state=0;
                           Buffer_length=0;
                           }

@@ -81,14 +81,14 @@ void pose_estimator(
 
             Q.setZero(25, 25);
             Q = 0.01 * Eigen::MatrixXf::Identity(25, 25);
-            Q.block( 0,  0, 3, 3) = Eigen::Matrix3f::Identity() * 0.1; 
-            Q.block( 3,  3, 4, 4) = Eigen::Matrix4f::Identity() * 0.001;
+            Q.block( 0,  0, 3, 3) = Eigen::Matrix3f::Identity() * 0.05; 
+            Q.block( 3,  3, 4, 4) = Eigen::Matrix4f::Identity() * 0.0001;
             Q.block( 7,  7, 3, 3) = Eigen::Matrix3f::Identity() * 0.1;
-            Q.block(10, 10, 3, 3) = Eigen::Matrix3f::Identity() * 0.2;
-            Q.block(13, 13, 3, 3) = Eigen::Matrix3f::Identity() * 0.2 ;
-            Q.block(16, 16, 3, 3) = Eigen::Matrix3f::Identity() * 0.00001;
-            Q.block(19, 19, 3, 3) = Eigen::Matrix3f::Identity() * 0.00001;
-            Q.block(22, 22, 3, 3) = Eigen::Matrix3f::Identity() * 0.00001;
+            Q.block(10, 10, 3, 3) = Eigen::Matrix3f::Identity() * 0.4;
+            Q.block(13, 13, 3, 3) = Eigen::Matrix3f::Identity() * 0.4;
+            Q.block(16, 16, 3, 3) = Eigen::Matrix3f::Identity() * 0.000000;
+            Q.block(19, 19, 3, 3) = Eigen::Matrix3f::Identity() * 0.00000;
+            Q.block(22, 22, 3, 3) = Eigen::Matrix3f::Identity() * 0.000000;
 
             P.setZero(25, 25);
         }
@@ -322,17 +322,17 @@ void pose_estimator(
     std::cout << "acceleration in world frame: " << std::fixed << std::setprecision(4) << Eigen::MatrixXf((q * zo_a_q * q.inverse()).vec()).transpose() << std::endl;
 
     uav::uav_states states_msg;
-    // states_msg.position.x = p.x();
-    // states_msg.position.y = p.y();
-    // states_msg.position.z = p.z();
+    states_msg.position.x = p.x();
+    states_msg.position.y = p.y();
+    states_msg.position.z = p.z();
     states_msg.orientation.w = q.w();
     states_msg.orientation.x = q.x();
     states_msg.orientation.y = q.y();
     states_msg.orientation.z = q.z();
 
-    states_msg.position.x = 1;
-    states_msg.position.y = 0;
-    states_msg.position.z = 0;
+    // states_msg.position.x = 1;
+    // states_msg.position.y = 0;
+    // states_msg.position.z = 0;
     
     states_msg.linear_velocity.x = v.x();
     states_msg.linear_velocity.y = v.y();
@@ -404,7 +404,7 @@ void imuCallback(const sensor_msgs::Imu::ConstPtr& msg)
     R.setZero(10, 10);
     R.block(0, 0, 4, 4) = 10 * Eigen::MatrixXf::Identity(4, 4);
     R.block(4, 4, 3, 3) = 0.1 * Eigen::MatrixXf::Identity(3, 3);
-    R.block(7, 7, 3, 3) = 0.0001 * Eigen::MatrixXf::Identity(3, 3);
+    R.block(7, 7, 3, 3) = 0.00000 * Eigen::MatrixXf::Identity(3, 3);
 
     pose_estimator(data.header.stamp.toSec(), uwb_distance, linear_acceleration, angular_velocity, R);
 }
@@ -433,7 +433,7 @@ void uwbCallback(const uav::UWB::ConstPtr& msg)
     
     R.setZero(10, 10);
 
-    R.block(0, 0, 4, 4) = 0.3 * Eigen::MatrixXf::Identity(4, 4);
+    R.block(0, 0, 4, 4) = 0.8 * Eigen::MatrixXf::Identity(4, 4);
     R.block(4, 4, 3, 3) = 0.2 * Eigen::MatrixXf::Identity(3, 3);
     R.block(7, 7, 3, 3) = 0.0003 * Eigen::MatrixXf::Identity(3, 3);
 

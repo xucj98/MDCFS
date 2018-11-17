@@ -43,7 +43,13 @@ void drawUav(Eigen::Vector3f position, Eigen::Quaternion<float> orientation, Eig
     c2 << -wheelbase / 2.828, -wheelbase / 2.828, 0;
     c3 <<  wheelbase / 2.828, -wheelbase / 2.828, 0;
     c4 << -wheelbase / 2.828,  wheelbase / 2.828, 0;
-    
+
+    Eigen::Vector3f center, head;
+    center << 0, 0, 0;
+    head << wheelbase, 0, 0;
+
+    pangolin::glDrawLine(rotvec(center), rotvec(head));
+
     pangolin::glDrawLine(rotvec(c1), rotvec(c2));
     pangolin::glDrawLine(rotvec(c3), rotvec(c4));
 
@@ -69,10 +75,10 @@ void drawUav(Eigen::Vector3f position, Eigen::Quaternion<float> orientation, Eig
     pangolin::glDrawLine(rotvec(ct2 + offset_z), rotvec(ct3 + offset_z));
     pangolin::glDrawLine(rotvec(ct3 + offset_z), rotvec(ct4 + offset_z));
     pangolin::glDrawLine(rotvec(ct4 + offset_z), rotvec(ct1 + offset_z));
-    pangolin::glDrawLine(rotvec(ct1), rotvec(ct2 + offset_z));
-    pangolin::glDrawLine(rotvec(ct2), rotvec(ct3 + offset_z));
-    pangolin::glDrawLine(rotvec(ct3), rotvec(ct4 + offset_z));
-    pangolin::glDrawLine(rotvec(ct4), rotvec(ct1 + offset_z));
+    pangolin::glDrawLine(rotvec(ct1), rotvec(ct1 + offset_z));
+    pangolin::glDrawLine(rotvec(ct2), rotvec(ct2 + offset_z));
+    pangolin::glDrawLine(rotvec(ct3), rotvec(ct3 + offset_z));
+    pangolin::glDrawLine(rotvec(ct4), rotvec(ct4 + offset_z));
 
     for (int i = 0; i < 30; i++)
     {

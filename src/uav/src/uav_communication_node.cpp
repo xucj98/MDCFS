@@ -119,10 +119,14 @@ int main(int argc, char** argv)
                          long temp_time=(buffer[2]<<24)+(buffer[3]<<16)+(buffer[4]<<8)+buffer[5];
 
                          uwb.header.stamp = ros::Time((float)temp_time/1000);
-                         uwb.d0 = ((float)((buffer[6]<<8)+buffer[7]))/1000;
-                         uwb.d1 = ((float)((buffer[8]<<8)+buffer[9]))/1000;
-                         uwb.d2 = ((float)((buffer[10]<<8)+buffer[11]))/1000;
-                         uwb.d3 = ((float)((buffer[12]<<8)+buffer[13]))/1000;
+                         uwb.d0 = ((float)((buffer[6]<<8)+buffer[7]))/1000-0.4;
+                         if(uwb.d0<0) uwb.d0=0;
+                         uwb.d1 = ((float)((buffer[8]<<8)+buffer[9]))/1000-0.4;
+                         if(uwb.d1<0) uwb.d1=0;
+                         uwb.d2 = ((float)((buffer[10]<<8)+buffer[11]))/1000-0.4;
+                         if(uwb.d2<0) uwb.d2=0;
+                         uwb.d3 = ((float)((buffer[12]<<8)+buffer[13]))/1000-0.4;
+                         if(uwb.d3<0) uwb.d3=0;
 
                         uwb_pub.publish(uwb);
                         }
@@ -159,6 +163,7 @@ int main(int argc, char** argv)
                         imu_pub.publish(imu);
 
                         uav::baro baro;
+                        baro.header.stamp  = ros::Time((float)temp_time2/1000);
                         baro.data = ((short)((buffer[18]<<8)+buffer[19]))/100.0;       
                         baro_pub.publish(baro);
 

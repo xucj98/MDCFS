@@ -75,6 +75,7 @@ void pose_estimator(
             g << 0, 0, 9.8;              
 
             Q.setZero(25, 25);
+            Q = 0.01 * Eigen::MatrixXf::Identity(25, 25);
         }
 
         if (R(0, 0) < 1) // uwb data is available
@@ -203,17 +204,18 @@ void pose_estimator(
     H.block(3, 0, 1, 3) = Eigen::MatrixXf(2 * (xe_p - ap3)).transpose();
 
     // rotation matrix of xe_q*
-    Eigen::Matrix3f R_xe_q;
-    R_xe_q = (sqr(xe_q.w()) - xe_q.vec().squaredNorm()) * Eigen::Matrix3f::Identity() +
-        2 * Eigen::MatrixXf(xe_q.vec()) * Eigen::MatrixXf(xe_q.vec()).transpose() +
-        - 2 * xe_q.w() * crossMatrix(xe_q.vec());
+    Eigen::Matrix3f R_xe_q = xe_q.inverse().toRotationMatrix();
+    // R_xe_q = (sqr(xe_q.w()) - xe_q.vec().squaredNorm()) * Eigen::Matrix3f::Identity() +
+    //     2 * Eigen::MatrixXf(xe_q.vec()) * Eigen::MatrixXf(xe_q.vec()).transpose() +
+    //     - 2 * xe_q.w() * crossMatrix(xe_q.vec());
+
     // Jacobi(ze_a, xe_a, xe_ba, xe_g)
     H.block(4, 10, 3, 3) = R_xe_q;
     H.block(4, 16, 3, 3) = Eigen::Matrix3f::Identity();
     H.block(4, 22, 3, 3) = R_xe_q;
     
     // Jacobi(ze_a, xe_q)
-    H.block(4, 3, 3, 1) = 2 * (xe_q.w() * Eigen::Matrix3f::Identity() - crossMatrix(xe_q.vec())) * (xe_a + xe_ba + xe_g);
+    H.block(4, 3, 3, 1) = 2 * (xe_q.w() * Eigen::Matrix3f::Identity() - crossMatrix(xe_q.vec())) * (xe_a + xe_g);
     Eigen::Vector3f a_w = xe_a + xe_g;
     H.block(4, 4, 3, 3) = 2 * a_w.dot(xe_q.vec()) * Eigen::Matrix3f::Identity() +
                           2 * xe_q.w() *crossMatrix(a_w) +
@@ -225,7 +227,8 @@ void pose_estimator(
     H.block(7, 19, 3, 3) = Eigen::Matrix3f::Identity();
 
     // Jacobi(ze_w, xe_q)
-    H.block(4, 4, 3, 3) = 2 * xe_w.dot(xe_q.vec()) * Eigen::Matrix3f::Identity() +
+    H.block(7, 3, 3, 1) = 2 * (xe_q.w() * Eigen::Matrix3f::Identity() - crossMatrix(xe_q.vec())) * (xe_w);
+    H.block(7, 4, 3, 3) = 2 * xe_w.dot(xe_q.vec()) * Eigen::Matrix3f::Identity() +
                           2 * xe_q.w() *crossMatrix(xe_w) +
                           2 * Eigen::MatrixXf(xe_q.vec()) * Eigen::MatrixXf(xe_w).transpose() - 
                           2 * Eigen::MatrixXf(xe_w) * Eigen::MatrixXf(xe_q.vec()).transpose();
@@ -331,7 +334,7 @@ void uwbCallback(const uav::UWB::ConstPtr& msg)
     linear_acceleration << 0, 0, 0;
     angular_velocity << 0, 0, 0;
     R.setZero(10, 10);
-    R.block(0, 0, 4, 4) = 0.01 * Eigen::MatrixXf::Identity(4, 4);
+    R.block(0, 0, 4, 4) = 0.1 * Eigen::MatrixXf::Identity(4, 4);
     R.block(4, 4, 3, 3) = 100 * Eigen::MatrixXf::Identity(3, 3);
     R.block(7, 7, 3, 3) = 100 * Eigen::MatrixXf::Identity(3, 3);
 

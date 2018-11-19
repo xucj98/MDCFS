@@ -35,17 +35,36 @@ int main(int argc, char** argv)
     //创建一个订阅者订阅来自EKF的位置解算
     ros::Subscriber states_sub = n.subscribe("states", 1000, stateCallback);
     //创建一个发布者用于发布给无人机的命令
-    ros::Publisher task_pub = n.advertise<uav::task_position>("task", 1000);
+    std::vector<ros::Publisher> tasks_pub;
+    tasks_pub.resize(4);
+
+    for (int i = 0; i < 4; i++)
+        tasks_pub[i] = n.advertise<uav::task_position>("uav_" + std::to_string(i) + "/task", 1000);
 
     ros::Rate loop_rate(1); 
     while(ros::ok()) 
     { 
         uav::task_position Target_Position;
         //ROS_INFO("1");
-        Target_Position.x=3;
+        Target_Position.x=1;
         Target_Position.y=3;
         Target_Position.z=2.5;
-        task_pub.publish(Target_Position);
+        tasks_pub[0].publish(Target_Position);
+
+        Target_Position.x=4;
+        Target_Position.y=3;
+        Target_Position.z=2.5;
+        tasks_pub[1].publish(Target_Position);
+
+        Target_Position.x=1;
+        Target_Position.y=0;
+        Target_Position.z=2.5;
+        tasks_pub[2].publish(Target_Position);
+
+        Target_Position.x=4;
+        Target_Position.y=0;
+        Target_Position.z=2.5;
+        tasks_pub[3].publish(Target_Position);
 
         //ROS_INFO("1");
         ros::spinOnce();

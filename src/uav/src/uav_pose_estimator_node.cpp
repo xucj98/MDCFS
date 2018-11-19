@@ -480,7 +480,7 @@ void baroCallback(const uav::baro::ConstPtr& msg)
     Eigen::MatrixXf R(11, 11);
 
     baro_height = data.data;
-    ROS_INFO("baro height: %f", data.data);
+    //ROS_INFO("baro height: %f", data.data);
 
     if (imu_datas.size() > 0) {
         linear_acceleration << imu_datas[imu_datas.size() - 1].linear_acceleration.x, imu_datas[imu_datas.size() - 1].linear_acceleration.y, imu_datas[imu_datas.size() - 1].linear_acceleration.z;

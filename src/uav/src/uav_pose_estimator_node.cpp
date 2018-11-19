@@ -367,15 +367,15 @@ void pose_estimator(
 
 
     // pub q_dc to uav_0 as reference
-    states_msg.position.x = 0;
-    states_msg.position.y = 0;
-    states_msg.position.z = 0;
-    states_msg.orientation.w = q_dc.w();
-    states_msg.orientation.x = q_dc.x();
-    states_msg.orientation.y = q_dc.y();
-    states_msg.orientation.z = q_dc.z();
+    // states_msg.position.x = 0;
+    // states_msg.position.y = 0;
+    // states_msg.position.z = 0;
+    // states_msg.orientation.w = q_dc.w();
+    // states_msg.orientation.x = q_dc.x();
+    // states_msg.orientation.y = q_dc.y();
+    // states_msg.orientation.z = q_dc.z();
     
-    states_ref_pub.publish(states_msg);
+    // states_ref_pub.publish(states_msg);
 
     last_time = curr_time;
 

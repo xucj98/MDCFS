@@ -9,6 +9,7 @@
 #include "uav/uav_communication.h"
 #include <Eigen/Dense>
 #include "uav/task_position.h"
+#include <math.h>
 
 // static serial::Serial sp; 
 
@@ -20,7 +21,7 @@
 Eigen::Vector3d Now_Position={0,0,0};
 Eigen::Vector3d Target_Position={0,0,0};
 // Eigen::Vector4f Now_q={0,0,0,0};
-Eigen::Vector3d My_Angle={0,0,0};
+Eigen::Vector3f My_Angle={0,0,0};
 
 void taskCallback(const uav::task_position::ConstPtr& msg)
 {
@@ -35,9 +36,15 @@ void stateCallback(const uav::uav_states::ConstPtr& msg)
     Now_Position[1]=msg->position.y;
     Now_Position[2]=msg->position.z;
     
-    Eigen::Quaterniond q; 
+    Eigen::Quaternion<float> q;
     q.x() = msg->orientation.x; q.y() = msg->orientation.y; q.z() = msg->orientation.z; q.w() = msg->orientation.w; 
-    My_Angle = q.toRotationMatrix().eulerAngles(2, 1, 0); 
+
+    Eigen::Quaternion<float> ref;
+    ref.w() = 0; ref.x() = 1; ref.y() = 0; ref.z() = 0;
+    ref = q * ref * q.inverse();
+
+    My_Angle(2)=atan2(ref.y(), ref.x());
+    //ROS_INFO("yaw: %f", atan2(ref.y(), ref.x())); 
 }
 
 float Distance(float x1,float y1,float x2,float y2)
@@ -64,6 +71,7 @@ float Delta_angle(float x1,float y1,float x2,float y2)
             }
             else
             Target_Angle=atan(Delta_y/Delta_x);
+            //ROS_INFO("Origin_Target_Angle:%f",Target_Angle);
 
             if(Delta_x>0 && Delta_y>0)
             {
@@ -99,6 +107,26 @@ float Min_BetAngle(float angle1,float angle2)
     }
 }
 
+float XIangdui_BetAngle(float angle1,float angle2)
+{
+   float x1=cos(angle1); 
+   float y1=sin(angle1); 
+
+   float x2=cos(angle2); 
+   float y2=sin(angle2); 
+
+   float COS=x1*x2+y1*y2;
+
+   if(COS>=0 && asin(x1*y2-y1*x2)>=0)
+   return asin(x1*y2-y1*x2);
+   else if (COS<0 && asin(x1*y2-y1*x2)>=0)
+   return 3.1415926-asin(x1*y2-y1*x2);
+   else if (COS>=0 && asin(x1*y2-y1*x2)<0)
+   return asin(x1*y2-y1*x2);
+   else if (COS<0 && asin(x1*y2-y1*x2)<0)
+   return -3.1415926-asin(x1*y2-y1*x2);
+}
+
 int main(int argc, char** argv) 
 { 
     ros::init(argc, argv, "uav_ctrl_node"); 
@@ -127,38 +155,44 @@ int main(int argc, char** argv)
        //ROS_INFO("%f %f %f",euler[0],euler[1],euler[2]);
     
        //ROS_INFO("%f",atan(-1));
-        // if(Target_Position[2]-Now_Position[2]>0.07)
-        // {
-        //     Command.data=0xA6;
-        //   //  ROS_INFO("Go Up");
-        //     command_pub.publish(Command);
-        //     //sleep(0.05);
-        // }
-        // else if (Target_Position[2]-Now_Position[2]<-0.07)
-        // {
-        //     Command.data=0xA7;
-        //    // ROS_INFO("Go Down");
-        //     command_pub.publish(Command);
-        //     //sleep(0.05);
-        // }
-      float Target_Angle;
-      if(Distance(Now_Position[0],Now_Position[1],Target_Position[0],Target_Position[1])>0.1)
+        if(Target_Position[2]-Now_Position[2]>0.07)
         {
-            Target_Angle=Delta_angle(Target_Position[0],Target_Position[1],Now_Position[0],Now_Position[1]); //Yaw
+            Command.data=0xA6;
+          //  ROS_INFO("Go Up");
+            command_pub.publish(Command);
+            //sleep(0.05);
+        }
+        else if (Target_Position[2]-Now_Position[2]<-0.07)
+        {
+            Command.data=0xA7;
+           // ROS_INFO("Go Down");
+            command_pub.publish(Command);
+            //sleep(0.05);
+        }
+        else
+        {
+      float Target_Angle;
+      float XiangduiAngl1=XIangdui_BetAngle(My_Angle(2),Target_Angle);
+      //ROS_INFO("Xiangdui:%f",XiangduiAngl1);
+
+      if(Distance(Now_Position[0],Now_Position[1],Target_Position[0],Target_Position[1])>0.5)
+        {
+            Target_Angle=Delta_angle(Now_Position[0],Now_Position[1],Target_Position[0],Target_Position[1]); //Yaw
             //My_Angle 无人机头朝向
             //Target_Angle 目标方向  
-
+            //ROS_INFO("Target_Angle:%f",Target_Angle);
+            //ROS_INFO("MinBet_Angle:%f",Min_BetAngle(My_Angle(2),Target_Angle));
             if(Min_BetAngle(My_Angle(2),Target_Angle)>0.1)
             {
                 Command.data=0xA5; //右转
-                ROS_INFO("Go Right");
+                //ROS_INFO("Go Right");
                 command_pub.publish(Command);
                 //sleep(0.05);
             }
             else if(Min_BetAngle(My_Angle(2),Target_Angle)<-0.1)
             {
                 Command.data=0xA4; //左转
-                ROS_INFO("Go Left");
+                //ROS_INFO("Go Left");
                 command_pub.publish(Command);
                 //sleep(0.05);
             }
@@ -166,14 +200,43 @@ int main(int argc, char** argv)
             if(Min_BetAngle(My_Angle(2),Target_Angle)<0.3 && Min_BetAngle(My_Angle(2),Target_Angle)>-0.3)
             {
                 Command.data=0xA0; //前进
-     //           ROS_INFO("Go Forward");
+               //ROS_INFO("Go Forward");
                 command_pub.publish(Command);
                 //sleep(0.05);
             }
 
             //ROS_INFO("%f",Target_Angle);
         }
+        // else if(Distance(Now_Position[0],Now_Position[1],Target_Position[0],Target_Position[1])>0.3 && Distance(Now_Position[0],Now_Position[1],Target_Position[0],Target_Position[1])<=0.5)
+        // {
+        //     float XiangduiAngle=XIangdui_BetAngle(My_Angle(2),Target_Angle);
 
+        //     //ROS_INFO("Xiangdui:%f",XiangduiAngle);
+
+        //   if(XiangduiAngle>=-3.1415926/2+3.1415926/6 && XiangduiAngle<3.1415926/2-3.1415926/6)
+        //   {
+        //     Command.data=0xA3; //右移
+        //     command_pub.publish(Command);
+        //   } 
+        //   else if(XiangduiAngle>=3.1415926/2+3.1415926/6 || XiangduiAngle<-3.1415926/2-3.1415926/6)
+        //   {
+        //     Command.data=0xA2; //左移
+        //     command_pub.publish(Command);              
+        //   }
+        //   else if(XiangduiAngle>=3.1415926/2-3.1415926/6 && XiangduiAngle<3.1415926/2+3.1415926/6)
+        //   {
+        //         Command.data=0xA0; //前进
+        //        //ROS_INFO("Go Forward");
+        //         command_pub.publish(Command);
+        //   }
+        //   else if(XiangduiAngle>=-3.1415926/2-3.1415926/6 && XiangduiAngle<-3.1415926/2+3.1415926/6)
+        //   {
+        //         Command.data=0xA1; //后退
+        //        //ROS_INFO("Go Forward");
+        //         command_pub.publish(Command);
+        //   }
+        // }
+        }
         //Command.data=0x0A;
        //command_pub.publish(Command);
         ros::spinOnce();

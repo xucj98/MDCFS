@@ -44,7 +44,7 @@ int main(int argc, char** argv)
         //ROS_INFO("1");
         Target_Position.x=3;
         Target_Position.y=3;
-        Target_Position.z=1;
+        Target_Position.z=2.5;
         task_pub.publish(Target_Position);
 
         //ROS_INFO("1");

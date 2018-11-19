@@ -290,15 +290,15 @@ void pose_estimator(
     Eigen::MatrixXf K = Pe * H.transpose() * S.inverse();
     
 
-    p       = xe_p       +  K.block( 0, 0, 3, 10) * y;
-    q.w()   = xe_q.w()   + (K.block( 3, 0, 1, 10) * y)(0);
-    q.vec() = xe_q.vec() +  K.block( 4, 0, 3, 10) * y;
-    v       = xe_v       +  K.block( 7, 0, 3, 10) * y;
-    a       = xe_a       +  K.block(10, 0, 3, 10) * y;
-    w       = xe_w       +  K.block(13, 0, 3, 10) * y;
-    ba      = xe_ba      +  K.block(16, 0, 3, 10) * y;
-    bw      = xe_bw      +  K.block(19, 0, 3, 10) * y;
-    g       = xe_g       +  K.block(22, 0, 3, 10) * y;
+    p       = xe_p       +  K.block( 0, 0, 3, 11) * y;
+    q.w()   = xe_q.w()   + (K.block( 3, 0, 1, 11) * y)(0);
+    q.vec() = xe_q.vec() +  K.block( 4, 0, 3, 11) * y;
+    v       = xe_v       +  K.block( 7, 0, 3, 11) * y;
+    a       = xe_a       +  K.block(10, 0, 3, 11) * y;
+    w       = xe_w       +  K.block(13, 0, 3, 11) * y;
+    ba      = xe_ba      +  K.block(16, 0, 3, 11) * y;
+    bw      = xe_bw      +  K.block(19, 0, 3, 11) * y;
+    g       = xe_g       +  K.block(22, 0, 3, 11) * y;
 
     g = g / sqrt(g.squaredNorm()) * 9.8;
 
@@ -417,7 +417,7 @@ void imuCallback(const sensor_msgs::Imu::ConstPtr& msg)
         baro_height = 0;
     }
     
-    R.setZero(10, 10);
+    R.setZero(11, 11);
     R.block(0, 0, 4, 4) = 50 * Eigen::MatrixXf::Identity(4, 4);
     R.block(4, 4, 3, 3) = 0.1 * Eigen::MatrixXf::Identity(3, 3);
     R.block(7, 7, 3, 3) = 0.00001 * Eigen::MatrixXf::Identity(3, 3);
@@ -480,6 +480,7 @@ void baroCallback(const uav::baro::ConstPtr& msg)
     Eigen::MatrixXf R(11, 11);
 
     baro_height = data.data;
+    ROS_INFO("baro height: %f", data.data);
 
     if (imu_datas.size() > 0) {
         linear_acceleration << imu_datas[imu_datas.size() - 1].linear_acceleration.x, imu_datas[imu_datas.size() - 1].linear_acceleration.y, imu_datas[imu_datas.size() - 1].linear_acceleration.z;
@@ -517,6 +518,7 @@ int main(int argc, char** argv)
 
     imu_sub = n.subscribe("imu", 1000, imuCallback);
     uwb_sub = n.subscribe("uwb", 1000, uwbCallback);
+    baro_sub = n.subscribe("baro", 1000, baroCallback);
 
     ros::spin();
 

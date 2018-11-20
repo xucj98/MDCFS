@@ -12,9 +12,32 @@
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
 
+
+int uav_count;
+int trajectory_count;
+int trajectory_stamp;
 Eigen::Vector3f Now_Position[4];
 Eigen::Vector3f Target_Position[4];
 Eigen::Vector3d My_Angle={0,0,0};
+
+std::vector<std::vector<Eigen::Vector3f> >  uavs_trajectory;
+
+void createTrajectory()
+{
+    uav_count = 1;
+    trajectory_count = 3;
+    uavs_trajectory.resize(uav_count);
+    uavs_trajectory[0].resize(trajectory_count);
+    uavs_trajectory[0][0] << 1, 1, 2.2;
+    uavs_trajectory[0][1] << 3, 1, 2.2;
+    uavs_trajectory[0][2] << 0.6, 0.6, 2.2;
+
+    // uavs_trajectory[1].resize(trajectory_count);
+    // uavs_trajectory[1][0] << 0.6, 2.6, 2.2;
+    // uavs_trajectory[1][1] << 3, 2.6, 2.2;
+    // uavs_trajectory[1][2] << 0.6, 2.6, 2.2;
+    
+}
 
 void uavStatesSubCallback(const uav::uav_states::ConstPtr& states, int uav_id)
 {
@@ -79,44 +102,90 @@ int main(int argc, char** argv)
         uavs_states_sub[i] = n.subscribe("uav_" + std::to_string(i) + "/states", 1000, boost::function<void (const uav::uav_states::ConstPtr&)>(boost::bind(uavStatesSubCallback, _1, i)));
 
     ros::Rate loop_rate(1000); 
+    ros::Time start_time;
+
+    createTrajectory();
 
     int TASK_CASE=0;
-    uint32_t My_time=0;
+    float My_time=0;
     uav::task_position Target_Position;
                 
-    //sleep(3);
+    sleep(5);
+    
+    start_time = ros::Time::now();
+    trajectory_stamp = -2;
+
     while(ros::ok()) 
     { 
-        My_time++;
-        switch(TASK_CASE)
+        My_time = (ros::Time::now() - start_time).toSec();
+        if (trajectory_stamp == -2)
         {
-            case 0:
-                Take_off(tasks_pub[0]);
-                Take_off(tasks_pub[1]);
-                Take_off(tasks_pub[2]);
-                Take_off(tasks_pub[3]);
-                if(My_time>2500){My_time=0;TASK_CASE=1;}
-                break;
-            case 1:
-                Command_Pub(tasks_pub[0],4,3,2.5);
-                Command_Pub(tasks_pub[1],1,3,2.5);
-                Command_Pub(tasks_pub[2],1,0,2.5);
-                Command_Pub(tasks_pub[3],4,0,2.5);
-                if(My_time>15000){My_time=0;TASK_CASE=2;}
-                break;               
-            case 2:
-                Command_Pub(tasks_pub[0],4,3,1.8);
-                Command_Pub(tasks_pub[1],1,3,1.8);
-                Command_Pub(tasks_pub[2],1,0,1.8);
-                Command_Pub(tasks_pub[3],4,0,1.8);
-                if(My_time>5000){My_time=0;TASK_CASE=3;}
-                break;
-            case 3:
-                if(My_time>5000){My_time=0;TASK_CASE=3;}
-                break;
-            default:
-                break;
+            for (int i = 0; i < uav_count; i++)
+                Take_off(tasks_pub[i]);
+            trajectory_stamp = -1;
         }
+
+        if (My_time < 3) continue;
+        
+        if (trajectory_stamp == -1)
+        {
+            printf("trajectory stamp -1 finished\n");
+            trajectory_stamp++;
+            for (int i = 0; i < uav_count; i++)
+                Command_Pub(tasks_pub[i], uavs_trajectory[i][trajectory_stamp].x(), uavs_trajectory[i][trajectory_stamp].y(), uavs_trajectory[i][trajectory_stamp].z());
+        }
+
+        bool arrive_flag = true;
+        for (int i = 0; i < uav_count; i++)
+            if ((uavs_trajectory[i][trajectory_stamp] - Now_Position[i]).squaredNorm() > 0.25)
+                arrive_flag = false;
+
+        if (arrive_flag)
+        {
+            printf("trajectory stamp %d finished\n", trajectory_stamp);
+            trajectory_stamp++;
+            if (trajectory_stamp < trajectory_count)
+            {
+                for (int i = 0; i < uav_count; i++)
+                    Command_Pub(tasks_pub[i], uavs_trajectory[i][trajectory_stamp].x(), uavs_trajectory[i][trajectory_stamp].y(), uavs_trajectory[i][trajectory_stamp].z());
+            }
+        }
+        
+        if (trajectory_stamp == trajectory_count)
+        {
+            for (int i = 0; i < uav_count; i++)
+                Land_on(tasks_pub[i]);
+            while(1);
+        }
+        // switch(TASK_CASE)
+        // {
+        //     case 0:
+        //         Take_off(tasks_pub[0]);
+        //         Take_off(tasks_pub[1]);
+        //         Take_off(tasks_pub[2]);
+        //         Take_off(tasks_pub[3]);
+        //         if(My_time>2500){My_time=0;TASK_CASE=1;}
+        //         break;
+        //     case 1:
+        //         Command_Pub(tasks_pub[0],4,3,2.5);
+        //         Command_Pub(tasks_pub[1],1,3,2.5);
+        //         Command_Pub(tasks_pub[2],1,0,2.5);
+        //         Command_Pub(tasks_pub[3],4,0,2.5);
+        //         if(My_time>15000){My_time=0;TASK_CASE=2;}
+        //         break;               
+        //     case 2:
+        //         Command_Pub(tasks_pub[0],4,3,1.8);
+        //         Command_Pub(tasks_pub[1],1,3,1.8);
+        //         Command_Pub(tasks_pub[2],1,0,1.8);
+        //         Command_Pub(tasks_pub[3],4,0,1.8);
+        //         if(My_time>5000){My_time=0;TASK_CASE=3;}
+        //         break;
+        //     case 3:
+        //         if(My_time>5000){My_time=0;TASK_CASE=3;}
+        //         break;
+        //     default:
+        //         break;
+        // }
 
         
 

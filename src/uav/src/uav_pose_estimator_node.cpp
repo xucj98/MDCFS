@@ -346,9 +346,13 @@ void pose_estimator(
     states_msg.orientation.y = q.y();
     states_msg.orientation.z = q.z();
 
-    // states_msg.position.x = 1;
-    // states_msg.position.y = 0;
-    // states_msg.position.z = 0;
+    // states_msg.orientation.w = q_dc.w();
+    // states_msg.orientation.x = q_dc.x();
+    // states_msg.orientation.y = q_dc.y();
+    // states_msg.orientation.z = q_dc.z();
+    states_msg.position.x = 1;
+    states_msg.position.y = 0;
+    states_msg.position.z = 0;
     
     states_msg.linear_velocity.x = v.x();
     states_msg.linear_velocity.y = v.y();
@@ -374,15 +378,15 @@ void pose_estimator(
 
 
     // pub q_dc to uav_0 as reference
-    // states_msg.position.x = 0;
-    // states_msg.position.y = 0;
-    // states_msg.position.z = 0;
-    // states_msg.orientation.w = q_dc.w();
-    // states_msg.orientation.x = q_dc.x();
-    // states_msg.orientation.y = q_dc.y();
-    // states_msg.orientation.z = q_dc.z();
+    states_msg.position.x = 0;
+    states_msg.position.y = 0;
+    states_msg.position.z = 0;
+    states_msg.orientation.w = q_dc.w();
+    states_msg.orientation.x = q_dc.x();
+    states_msg.orientation.y = q_dc.y();
+    states_msg.orientation.z = q_dc.z();
     
-    // states_ref_pub.publish(states_msg);
+    states_ref_pub.publish(states_msg);
 
     last_time = curr_time;
 
@@ -491,7 +495,7 @@ void uwbCallback(const uav::UWB::ConstPtr& msg)
 
     R.block(0, 0, 4, 4) = 0.8 * Eigen::MatrixXf::Identity(4, 4);
     R.block(4, 4, 3, 3) = 0.2 * Eigen::MatrixXf::Identity(3, 3);
-    R.block(7, 7, 3, 3) = 0.0003 * Eigen::MatrixXf::Identity(3, 3);
+    R.block(7, 7, 3, 3) = 0.003 * Eigen::MatrixXf::Identity(3, 3);
     R(10, 10) = 0.05;
 
     pose_estimator(data.header.stamp.toSec(), uwb_distance, linear_acceleration, angular_velocity, baro_height, R);

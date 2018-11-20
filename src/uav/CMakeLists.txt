@@ -19,6 +19,10 @@ include_directories(
 find_package(Pangolin 0.4 REQUIRED)
 include_directories(${Pangolin_INCLUDE_DIRS})
 
+find_package(OpenCV REQUIRED)
+include_directories(${OpenCV_INCLUDE_DIRS})
+
+
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
@@ -50,6 +54,7 @@ include_directories(${Pangolin_INCLUDE_DIRS})
 
 ## Generate messages in the 'msg' folder
 add_message_files(FILES
+  datas_rate.msg
   baro.msg
   task_position.msg
   uav_states.msg
@@ -227,6 +232,7 @@ add_dependencies(uav_visualization_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${ca
 target_link_libraries(uav_visualization_node
   ${catkin_LIBRARIES}
   ${Pangolin_LIBRARIES}
+  ${OpenCV_LIBS}
 )
 
 add_executable(uav_ctrl_node

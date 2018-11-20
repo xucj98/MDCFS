@@ -24,7 +24,7 @@ static std::vector<ros::Subscriber> uavs_dates_rate_sub;
 static std::vector<int> uavs_imu_rate;
 static std::vector<int> uavs_uwb_rate;
 
-static cv::Mat infos_img(480, 640, CV_8UC1);
+static cv::Mat infos_img(1000, 2000, CV_8UC1);
 
 void drawGround()
 {
@@ -196,7 +196,7 @@ int main(int argc, char **argv)
             std::stringstream ss;
             ss << "uav_" << std::to_string(i) << ".position: " << std::fixed << std::setprecision(2) << std::setw(5) << Eigen::MatrixXf(positions[i]).transpose() << ", imu rate: " << uavs_imu_rate[i] << ", uwb rate: " << uavs_uwb_rate[i];
             std::string str = ss.str();
-            cv::putText(infos_img, ss.str(), cv::Point(10, i * 30 + 30), cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0), 1, 8);
+            cv::putText(infos_img, ss.str(), cv::Point(10, i * 30 + 30), cv::FONT_HERSHEY_PLAIN, 3, cv::Scalar(0), 1, 8);
         }
         cv::imshow("information", infos_img);
         cv::waitKey(1);

@@ -142,10 +142,10 @@ int main(int argc, char** argv)
                         else
                         {                          
                          uint8_t check=0;
-                         for(int j=0;j<20;j++)
+                         for(int j=0;j<28;j++)
                          check+=buffer[j];
 
-                        if(check==buffer[20])
+                        if(check==buffer[28])
                         {
                         long long temp_time2=(buffer[2]<<24)+(buffer[3]<<16)+(buffer[4]<<8)+buffer[5];
                         // ROS_INFO("%lld",temp_time2);
@@ -160,6 +160,11 @@ int main(int argc, char** argv)
                         imu.angular_velocity.x = ((short)((buffer[12]<<8)+buffer[13]))/1000.0;
                         imu.angular_velocity.y = ((short)((buffer[14]<<8)+buffer[15]))/1000.0;
                         imu.angular_velocity.z = ((short)((buffer[16]<<8)+buffer[17]))/1000.0;  
+
+                        imu.orientation.x=((short)((buffer[20]<<8)+buffer[21]))/1000.0;
+                        imu.orientation.y=((short)((buffer[22]<<8)+buffer[23]))/1000.0;
+                        imu.orientation.z=((short)((buffer[24]<<8)+buffer[25]))/1000.0;
+                        imu.orientation.w=((short)((buffer[26]<<8)+buffer[27]))/1000.0;
 
                         imu_pub.publish(imu);
 

@@ -84,25 +84,28 @@ int main(int argc, char** argv)
     uint32_t My_time=0;
     uav::task_position Target_Position;
                 
-    //sleep(3);
+    sleep(3);
     while(ros::ok()) 
     { 
         My_time++;
         switch(TASK_CASE)
         {
             case 0:
+            if(My_time==1)
+            {
                 Take_off(tasks_pub[0]);
                 Take_off(tasks_pub[1]);
                 Take_off(tasks_pub[2]);
                 Take_off(tasks_pub[3]);
-                if(My_time>2500){My_time=0;TASK_CASE=1;}
+            }
+                if(My_time>1000){My_time=0;TASK_CASE=1;}
                 break;
             case 1:
                 Command_Pub(tasks_pub[0],4,3,2.5);
                 Command_Pub(tasks_pub[1],1,3,2.5);
                 Command_Pub(tasks_pub[2],1,0,2.5);
                 Command_Pub(tasks_pub[3],4,0,2.5);
-                if(My_time>15000){My_time=0;TASK_CASE=2;}
+                if(My_time>25000){My_time=0;TASK_CASE=2;}
                 break;               
             case 2:
                 Command_Pub(tasks_pub[0],4,3,1.8);

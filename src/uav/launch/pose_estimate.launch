@@ -8,35 +8,32 @@
     
     <group ns="uav_0">
         <node pkg="uav" name="communciation_node" type="uav_communication_node" output="screen">
-            <param name="sp_name" value="/dev/rfcomm20" /> 
+            <param name="sp_name" value="/dev/rfcomm24" /> 
         </node>
         <node pkg="uav" name="pose_estimator_node" type="uav_pose_estimator_node" output="screen"/>
     </group>
   
     <group ns="uav_1">
         <node pkg="uav" name="communciation_node" type="uav_communication_node" output="screen">
-            <param name="sp_name" value="/dev/rfcomm21" /> 
+            <param name="sp_name" value="/dev/rfcomm25" /> 
         </node>
         <node pkg="uav" name="pose_estimator_node" type="uav_pose_estimator_node" output="screen"/>
     </group>
 
-    <!--<group ns="uav_2">
+    <group ns="uav_2">
         <node pkg="uav" name="communciation_node" type="uav_communication_node" output="screen">
-            <param name="sp_name" value="/dev/rfcomm22" /> 
+            <param name="sp_name" value="/dev/rfcomm26" /> 
         </node>
         <node pkg="uav" name="pose_estimator_node" type="uav_pose_estimator_node" output="screen"/>
     </group>
 
     <group ns="uav_3">
         <node pkg="uav" name="communciation_node" type="uav_communication_node" output="screen">
-            <param name="sp_name" value="/dev/rfcomm23" /> 
+            <param name="sp_name" value="/dev/rfcomm27" /> 
         </node>
         <node pkg="uav" name="pose_estimator_node" type="uav_pose_estimator_node" output="screen"/>
-    </group>-->
+    </group>
 
-     <!--<group ns="uav_1">
-        <node pkg="uav" name="pose_estimator_node" type="uav_pose_estimator_node" output="screen"/>
-    </group>-->
     <node pkg="uav" name="visiualization_node" type="uav_visualization_node" output="screen">
         <param name="uav_count" value="4" />
     </node>

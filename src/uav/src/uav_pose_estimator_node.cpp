@@ -4,6 +4,7 @@
 #include <uav/baro.h>
 #include <sensor_msgs/Imu.h>
 #include <Eigen/Dense>
+#include <uav/datas_rate.h>
 
 // anchor position
 const Eigen::Vector3f ap0(   0,    0,  2.4);
@@ -31,6 +32,7 @@ static Eigen::Quaternion<float> q_dc_1; // orientation getted by direct integral
 // static Eigen::MatrixXf R(10, 10); // covariance matrix of observation
 
 static ros::Publisher states_pub;
+static ros::Publisher datas_rate_pub;
 static ros::Publisher states_ref_pub; // pub to ref topic  as reference
 static ros::Subscriber imu_sub;
 static ros::Subscriber uwb_sub;
@@ -39,6 +41,10 @@ static ros::Subscriber baro_sub;
 static std::vector<sensor_msgs::Imu> imu_datas;
 static std::vector<uav::UWB> uwb_datas;
 static std::vector<uav::baro> baro_datas;
+
+static ros::Time datas_rate_clk;
+
+static int imu_data_cnt = 0, uwb_data_cnt = 0;
 
 Eigen::Matrix3f crossMatrix(Eigen::Vector3f w)
 {
@@ -63,7 +69,7 @@ void pose_estimator(
     // initialized system
     if (!initialized)
     {
-        ROS_INFO("initialized %d %d", imu_init_cnt, uwb_init_cnt);
+        // ROS_INFO("initialized %d %d", imu_init_cnt, uwb_init_cnt);
         last_time = curr_time;
 
         // estimate initial value of position
@@ -325,7 +331,7 @@ void pose_estimator(
     // std::cout << "==================== Matrix New P ========================" << std::endl;
     // std::cout << std::fixed << std::setprecision(2) << P << std::endl << std::endl;
 
-    ROS_INFO("position: %0.4f %0.4f %0.4f", p.x(), p.y(), p.z()); 
+    // ROS_INFO("position: %0.4f %0.4f %0.4f", p.x(), p.y(), p.z()); 
     eulerAngles = q.toRotationMatrix().eulerAngles(2, 1, 0);
     // ROS_INFO("orientation: %0.4f %0.4f %0.4f", eulerAngles(0), eulerAngles(1), eulerAngles(2));
     // std::cout << "acceleration in world frame: " << std::fixed << std::setprecision(4) << Eigen::MatrixXf((q * zo_a_q * q.inverse()).vec()).transpose() << std::endl;
@@ -398,11 +404,23 @@ void imuCallback(const sensor_msgs::Imu::ConstPtr& msg)
     // ROS_INFO("|linear_acceleration| = %f, |angular_velocity| = %f", sqrt(linear_acceleration.squaredNorm()), sqrt(angular_velocity.squaredNorm())); 
     if (abs(sqrt(linear_acceleration.squaredNorm()) - 9.8) > 0.3 || sqrt(angular_velocity.squaredNorm()) > 3.14) return;
 
+    imu_data_cnt++;
     imu_datas.push_back(data);
     // ROS_INFO("imu time stamp: %lf", data.header.stamp.toSec());
     // ROS_INFO("linear acceleration: %f %f %f", data.linear_acceleration.x, data.linear_acceleration.y, data.linear_acceleration.z);
     // ROS_INFO("angular velocity: %f %f %f", data.angular_velocity.x, data.angular_velocity.y, data.angular_velocity.z);
     
+    if ((ros::Time::now() - datas_rate_clk).toSec() > 1)
+    {
+        datas_rate_clk = ros::Time::now();
+
+        uav::datas_rate datas_rate;
+        datas_rate.imu_rate = imu_data_cnt;
+        datas_rate.uwb_rate = uwb_data_cnt;
+        imu_data_cnt = 0;
+        uwb_data_cnt = 0;
+        datas_rate_pub.publish(datas_rate);
+    }
     
     if (uwb_datas.size() > 0) {
         uwb_distance << uwb_datas[uwb_datas.size() - 1].d0, uwb_datas[uwb_datas.size() - 1].d1, uwb_datas[uwb_datas.size() - 1].d2, uwb_datas[uwb_datas.size() - 1].d3;
@@ -439,6 +457,19 @@ void uwbCallback(const uav::UWB::ConstPtr& msg)
     Eigen::Vector3f angular_velocity;
     float baro_height;
     Eigen::MatrixXf R(10, 10);
+
+    uwb_data_cnt++;
+    if ((ros::Time::now() - datas_rate_clk).toSec() > 1)
+    {
+        datas_rate_clk = ros::Time::now();
+
+        uav::datas_rate datas_rate;
+        datas_rate.imu_rate = imu_data_cnt;
+        datas_rate.uwb_rate = uwb_data_cnt;
+        imu_data_cnt = 0;
+        uwb_data_cnt = 0;
+        datas_rate_pub.publish(datas_rate);
+    }
 
     uwb_distance << data.d0, data.d1, data.d2, data.d3;
     if (imu_datas.size() > 0) {
@@ -515,10 +546,13 @@ int main(int argc, char** argv)
 
     states_pub = n.advertise<uav::uav_states>("states", 1000);
     states_ref_pub = n.advertise<uav::uav_states>("states_ref", 1000);
+    datas_rate_pub = n.advertise<uav::datas_rate>("datas_rate", 1000);
 
     imu_sub = n.subscribe("imu", 1000, imuCallback);
     uwb_sub = n.subscribe("uwb", 1000, uwbCallback);
     baro_sub = n.subscribe("baro", 1000, baroCallback);
+
+    datas_rate_clk = ros::Time::now();
 
     ros::spin();
 

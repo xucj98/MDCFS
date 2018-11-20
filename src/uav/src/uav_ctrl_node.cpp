@@ -155,14 +155,14 @@ int main(int argc, char** argv)
        //ROS_INFO("%f %f %f",euler[0],euler[1],euler[2]);
     
        //ROS_INFO("%f",atan(-1));
-        if(Target_Position[2]-Now_Position[2]>0.07)
+        if(Target_Position[2]-Now_Position[2]>0.1)
         {
             Command.data=0xA6;
           //  ROS_INFO("Go Up");
             command_pub.publish(Command);
             //sleep(0.05);
         }
-        else if (Target_Position[2]-Now_Position[2]<-0.07)
+        else if (Target_Position[2]-Now_Position[2]<-0.1)
         {
             Command.data=0xA7;
            // ROS_INFO("Go Down");
@@ -217,7 +217,7 @@ int main(int argc, char** argv)
         //   {
         //     Command.data=0xA3; //右移
         //     command_pub.publish(Command);
-        //   } 
+        //   }  
         //   else if(XiangduiAngle>=3.1415926/2+3.1415926/6 || XiangduiAngle<-3.1415926/2-3.1415926/6)
         //   {
         //     Command.data=0xA2; //左移

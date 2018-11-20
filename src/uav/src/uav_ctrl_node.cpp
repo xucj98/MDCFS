@@ -23,11 +23,16 @@ Eigen::Vector3d Target_Position={0,0,0};
 // Eigen::Vector4f Now_q={0,0,0,0};
 Eigen::Vector3f My_Angle={0,0,0};
 
+uint8_t UAV_Command =3; //命令类型 起飞0 移动1 降落2 所死3
+
+
 void taskCallback(const uav::task_position::ConstPtr& msg)
 {
     Target_Position[0]=msg->x;
     Target_Position[1]=msg->y;
     Target_Position[2]=msg->z;
+    UAV_Command=msg->c;
+    //ROS_INFO("11");
 }
 
 void stateCallback(const uav::uav_states::ConstPtr& msg)
@@ -152,9 +157,8 @@ int main(int argc, char** argv)
 
     while(ros::ok()) 
     { 
-       //ROS_INFO("%f %f %f",euler[0],euler[1],euler[2]);
-    
-       //ROS_INFO("%f",atan(-1));
+        if(UAV_Command==1)
+        {
         if(Target_Position[2]-Now_Position[2]>0.1)
         {
             Command.data=0xA6;
@@ -172,9 +176,6 @@ int main(int argc, char** argv)
         else
         {
       float Target_Angle;
-      float XiangduiAngl1=XIangdui_BetAngle(My_Angle(2),Target_Angle);
-      //ROS_INFO("Xiangdui:%f",XiangduiAngl1);
-
       if(Distance(Now_Position[0],Now_Position[1],Target_Position[0],Target_Position[1])>0.5)
         {
             Target_Angle=Delta_angle(Now_Position[0],Now_Position[1],Target_Position[0],Target_Position[1]); //Yaw
@@ -239,9 +240,22 @@ int main(int argc, char** argv)
         }
         //Command.data=0x0A;
        //command_pub.publish(Command);
-        ros::spinOnce();
-        loop_rate.sleep(); 
-    } 
-    
+    }
+    else if(UAV_Command==0)
+    {
+    Command.data=0xFC; //起飞
+    command_pub.publish(Command);
+    //UAV_Command=3;
+    }
+    else if(UAV_Command==2)
+    {
+    Command.data=0xFB; //降落
+    command_pub.publish(Command);
+    UAV_Command=3;
+    }
+
+    ros::spinOnce();
+    loop_rate.sleep();  
+    }
     return 0; 
-} 
+}

@@ -13,6 +13,7 @@ static serial::Serial sp;
 
 void transmitCallback(const std_msgs::UInt8::ConstPtr& msg)
 {
+    //ROS_INFO("Received = %c",msg->data);
     sp.write(&(msg->data), 1);
 }
 

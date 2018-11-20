@@ -9,21 +9,54 @@
 #include "uav/uav_communication.h"
 #include "uav/task_position.h"
 #include <Eigen/Dense>
+#include <boost/bind.hpp>
+#include <boost/function.hpp>
 
-Eigen::Vector3d Now_Position={0,0,0};
-Eigen::Vector3d Target_Position={0,0,0};
-// Eigen::Vector4f Now_q={0,0,0,0};
+Eigen::Vector3f Now_Position[4];
+Eigen::Vector3f Target_Position[4];
 Eigen::Vector3d My_Angle={0,0,0};
 
-void stateCallback(const uav::uav_states::ConstPtr& msg)
+void uavStatesSubCallback(const uav::uav_states::ConstPtr& states, int uav_id)
 {
-    Now_Position[0]=msg->position.x;
-    Now_Position[1]=msg->position.y;
-    Now_Position[2]=msg->position.z;
-    
-    Eigen::Quaterniond q; 
-    q.x() = msg->orientation.x; q.y() = msg->orientation.y; q.z() = msg->orientation.z; q.w() = msg->orientation.w; 
-    My_Angle = q.toRotationMatrix().eulerAngles(2, 1, 0); 
+    Now_Position[uav_id].x() = states->position.x;
+    Now_Position[uav_id].y() = states->position.y;
+    Now_Position[uav_id].z() = states->position.z;
+    // orientations[uav_id].w() = states->orientation.w;
+    // orientations[uav_id].x() = states->orientation.x;
+    // orientations[uav_id].y() = states->orientation.y;
+    // orientations[uav_id].z() = states->orientation.z;
+}
+
+void Command_Pub(ros::Publisher Pub,float x,float y,float z)
+{
+        uav::task_position Target_Position;
+        Target_Position.x=x;
+        Target_Position.y=y;
+        Target_Position.z=z;
+        Target_Position.c=1;
+
+        Pub.publish(Target_Position);
+}
+void Take_off(ros::Publisher& Pub)
+{
+        uav::task_position Target_Position;
+        Target_Position.x=0;
+        Target_Position.y=0;
+        Target_Position.z=0;
+        Target_Position.c=0;
+
+        Pub.publish(Target_Position);
+}
+
+void Land_on(ros::Publisher Pub)
+{
+        uav::task_position Target_Position;
+        Target_Position.x=0;
+        Target_Position.y=0;
+        Target_Position.z=0;
+        Target_Position.c=2;
+        
+        Pub.publish(Target_Position);
 }
 
 int main(int argc, char** argv) 
@@ -32,41 +65,63 @@ int main(int argc, char** argv)
     ros::NodeHandle n; 
     ros::NodeHandle np("~");
 
-    //创建一个订阅者订阅来自EKF的位置解算
-    ros::Subscriber states_sub = n.subscribe("states", 1000, stateCallback);
     //创建一个发布者用于发布给无人机的命令
     std::vector<ros::Publisher> tasks_pub;
+    std::vector<ros::Subscriber> uavs_states_sub;
+
     tasks_pub.resize(4);
+    uavs_states_sub.resize(4);
 
     for (int i = 0; i < 4; i++)
         tasks_pub[i] = n.advertise<uav::task_position>("uav_" + std::to_string(i) + "/task", 1000);
 
-    ros::Rate loop_rate(1); 
+    for (int i = 0; i < 4; i++)
+        uavs_states_sub[i] = n.subscribe("uav_" + std::to_string(i) + "/states", 1000, boost::function<void (const uav::uav_states::ConstPtr&)>(boost::bind(uavStatesSubCallback, _1, i)));
+
+    ros::Rate loop_rate(1000); 
+
+    int TASK_CASE=0;
+    uint32_t My_time=0;
+    uav::task_position Target_Position;
+                
+    //sleep(3);
     while(ros::ok()) 
     { 
-        uav::task_position Target_Position;
-        //ROS_INFO("1");
-        Target_Position.x=1;
-        Target_Position.y=3;
-        Target_Position.z=2.5;
-        tasks_pub[0].publish(Target_Position);
+        My_time++;
+        switch(TASK_CASE)
+        {
+            case 0:
+                Take_off(tasks_pub[0]);
+                Take_off(tasks_pub[1]);
+                Take_off(tasks_pub[2]);
+                Take_off(tasks_pub[3]);
+                if(My_time>2500){My_time=0;TASK_CASE=1;}
+                break;
+            case 1:
+                Command_Pub(tasks_pub[0],4,3,2.5);
+                Command_Pub(tasks_pub[1],1,3,2.5);
+                Command_Pub(tasks_pub[2],1,0,2.5);
+                Command_Pub(tasks_pub[3],4,0,2.5);
+                if(My_time>15000){My_time=0;TASK_CASE=2;}
+                break;               
+            case 2:
+                Command_Pub(tasks_pub[0],4,3,1.8);
+                Command_Pub(tasks_pub[1],1,3,1.8);
+                Command_Pub(tasks_pub[2],1,0,1.8);
+                Command_Pub(tasks_pub[3],4,0,1.8);
+                if(My_time>5000){My_time=0;TASK_CASE=3;}
+                break;
+            case 3:
+                if(My_time>5000){My_time=0;TASK_CASE=3;}
+                break;
+            default:
+                break;
+        }
 
-        Target_Position.x=4;
-        Target_Position.y=3;
-        Target_Position.z=2.5;
-        tasks_pub[1].publish(Target_Position);
+        
 
-        Target_Position.x=1;
-        Target_Position.y=0;
-        Target_Position.z=2.5;
-        tasks_pub[2].publish(Target_Position);
+        
 
-        Target_Position.x=4;
-        Target_Position.y=0;
-        Target_Position.z=2.5;
-        tasks_pub[3].publish(Target_Position);
-
-        //ROS_INFO("1");
         ros::spinOnce();
         loop_rate.sleep(); 
     } 

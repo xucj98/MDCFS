@@ -325,7 +325,7 @@ void pose_estimator(
     // std::cout << "==================== Matrix New P ========================" << std::endl;
     // std::cout << std::fixed << std::setprecision(2) << P << std::endl << std::endl;
 
-    ROS_INFO("position: %0.4f %0.4f %0.4f", p.x(), p.y(), p.z()); 
+    //ROS_INFO("position: %0.4f %0.4f %0.4f", p.x(), p.y(), p.z()); 
     eulerAngles = q.toRotationMatrix().eulerAngles(2, 1, 0);
     // ROS_INFO("orientation: %0.4f %0.4f %0.4f", eulerAngles(0), eulerAngles(1), eulerAngles(2));
     // std::cout << "acceleration in world frame: " << std::fixed << std::setprecision(4) << Eigen::MatrixXf((q * zo_a_q * q.inverse()).vec()).transpose() << std::endl;

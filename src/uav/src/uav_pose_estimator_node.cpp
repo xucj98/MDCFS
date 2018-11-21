@@ -99,9 +99,9 @@ void pose_estimator(
             Q.block( 7,  7, 3, 3) = Eigen::Matrix3f::Identity() * 0.1;
             Q.block(10, 10, 3, 3) = Eigen::Matrix3f::Identity() * 0.4;
             Q.block(13, 13, 3, 3) = Eigen::Matrix3f::Identity() * 0.4;
-            Q.block(16, 16, 3, 3) = Eigen::Matrix3f::Identity() * 0.000001;
-            Q.block(19, 19, 3, 3) = Eigen::Matrix3f::Identity() * 0.000001;
-            Q.block(22, 22, 3, 3) = Eigen::Matrix3f::Identity() * 0.000001;
+            Q.block(16, 16, 3, 3) = Eigen::Matrix3f::Identity() * 0.000000;
+            Q.block(19, 19, 3, 3) = Eigen::Matrix3f::Identity() * 0.000000;
+            Q.block(22, 22, 3, 3) = Eigen::Matrix3f::Identity() * 0.000000;
 
             P.setZero(25, 25);
         }
@@ -336,12 +336,12 @@ void pose_estimator(
     // std::cout << "==================== Matrix new states ========================" << std::endl;
     // std::cout << "p:" << std::fixed << std::setprecision(2) << p << std::endl << std::endl;
     // std::cout << "q:" << std::fixed << std::setprecision(2) << q.toRotationMatrix().eulerAngles() << std::endl << std::endl;
-    std::cout << "v:" << std::fixed << std::setprecision(2) << Eigen::MatrixXf(v).transpose() << std::endl;
-    std::cout << "a:" << std::fixed << std::setprecision(2) << Eigen::MatrixXf(a).transpose() << std::endl;
+    // std::cout << "v:" << std::fixed << std::setprecision(2) << Eigen::MatrixXf(v).transpose() << std::endl;
+    // std::cout << "a:" << std::fixed << std::setprecision(2) << Eigen::MatrixXf(a).transpose() << std::endl;
     // std::cout << "w:" << std::fixed << std::setprecision(2) << Eigen::MatrixXf(w).transpose() << std::endl;
-    std::cout << "ba:" << std::fixed << std::setprecision(2) << Eigen::MatrixXf(ba).transpose() << std::endl;
-    std::cout << "bw:" << std::fixed << std::setprecision(2) << Eigen::MatrixXf(bw).transpose() << std::endl;
-    std::cout << "g:" << std::fixed << std::setprecision(2) << Eigen::MatrixXf(g).transpose() << std::endl;    
+    // std::cout << "ba:" << std::fixed << std::setprecision(2) << Eigen::MatrixXf(ba).transpose() << std::endl;
+    // std::cout << "bw:" << std::fixed << std::setprecision(2) << Eigen::MatrixXf(bw).transpose() << std::endl;
+    // std::cout << "g:" << std::fixed << std::setprecision(2) << Eigen::MatrixXf(g).transpose() << std::endl;    
      
     P = (Eigen::MatrixXf::Identity(25, 25) - K * H) * Pe;
 

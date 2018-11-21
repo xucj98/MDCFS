@@ -26,7 +26,7 @@
   
     <group ns="uav_0">
         <node pkg="uav" name="communciation_node" type="uav_communication_node" output="screen">
-            <param name="sp_name" value="/dev/rfcomm2" /> 
+            <param name="sp_name" value="/dev/rfcomm3" /> 
         </node>
         <node pkg="uav" name="pose_estimator_node" type="uav_pose_estimator_node" output="screen"/>
         

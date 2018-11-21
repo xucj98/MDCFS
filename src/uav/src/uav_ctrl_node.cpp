@@ -251,9 +251,9 @@ int main(int argc, char** argv)
         }else if (UAV_Command==4)
         {
             Command.data=0xF1;
-            ROS_INFO("Unlock!");
+            // ROS_INFO("Unlock!");
             command_pub.publish(Command);
-            // UAV_Command=3;
+            UAV_Command=3;
         }
 
         ros::spinOnce();

@@ -159,103 +159,107 @@ int main(int argc, char** argv)
     { 
         if(UAV_Command==1)
         {
-        if(Target_Position[2]-Now_Position[2]>0.1)
+            if(Target_Position[2]-Now_Position[2]>0.1)
+            {
+                Command.data=0xA6;
+            //  ROS_INFO("Go Up");
+                command_pub.publish(Command);
+                //sleep(0.05);
+            }else if (Target_Position[2]-Now_Position[2]<-0.1)
+            {
+                Command.data=0xA7;
+            // ROS_INFO("Go Down");
+                command_pub.publish(Command);
+                //sleep(0.05);
+            }else
+            {
+            float Target_Angle;
+            if(Distance(Now_Position[0],Now_Position[1],Target_Position[0],Target_Position[1])>0.5)
+            {
+                Target_Angle=Delta_angle(Now_Position[0],Now_Position[1],Target_Position[0],Target_Position[1]); //Yaw
+                //My_Angle 无人机头朝向
+                //Target_Angle 目标方向  
+                //ROS_INFO("Target_Angle:%f",Target_Angle);
+                //ROS_INFO("MinBet_Angle:%f",Min_BetAngle(My_Angle(2),Target_Angle));
+                if(Min_BetAngle(My_Angle(2),Target_Angle)>0.1)
+                {
+                    Command.data=0xA5; //右转
+                    //ROS_INFO("Go Right");
+                    command_pub.publish(Command);
+                    //sleep(0.05);
+                }
+                else if(Min_BetAngle(My_Angle(2),Target_Angle)<-0.1)
+                {
+                    Command.data=0xA4; //左转
+                    //ROS_INFO("Go Left");
+                    command_pub.publish(Command);
+                    //sleep(0.05);
+                }
+
+                if(Min_BetAngle(My_Angle(2),Target_Angle)<0.3 && Min_BetAngle(My_Angle(2),Target_Angle)>-0.3)
+                {
+                    Command.data=0xA0; //前进
+                //ROS_INFO("Go Forward");
+                    command_pub.publish(Command);
+                    //sleep(0.05);
+                }
+
+                //ROS_INFO("%f",Target_Angle);
+            }
+            // else if(Distance(Now_Position[0],Now_Position[1],Target_Position[0],Target_Position[1])>0.3 && Distance(Now_Position[0],Now_Position[1],Target_Position[0],Target_Position[1])<=0.5)
+            // {
+            //     float XiangduiAngle=XIangdui_BetAngle(My_Angle(2),Target_Angle);
+
+            //     //ROS_INFO("Xiangdui:%f",XiangduiAngle);
+
+            //   if(XiangduiAngle>=-3.1415926/2+3.1415926/6 && XiangduiAngle<3.1415926/2-3.1415926/6)
+            //   {
+            //     Command.data=0xA3; //右移
+            //     command_pub.publish(Command);
+            //   }  
+            //   else if(XiangduiAngle>=3.1415926/2+3.1415926/6 || XiangduiAngle<-3.1415926/2-3.1415926/6)
+            //   {
+            //     Command.data=0xA2; //左移
+            //     command_pub.publish(Command);              
+            //   }
+            //   else if(XiangduiAngle>=3.1415926/2-3.1415926/6 && XiangduiAngle<3.1415926/2+3.1415926/6)
+            //   {
+            //         Command.data=0xA0; //前进
+            //        //ROS_INFO("Go Forward");
+            //         command_pub.publish(Command);
+            //   }
+            //   else if(XiangduiAngle>=-3.1415926/2-3.1415926/6 && XiangduiAngle<-3.1415926/2+3.1415926/6)
+            //   {
+            //         Command.data=0xA1; //后退
+            //        //ROS_INFO("Go Forward");
+            //         command_pub.publish(Command);
+            //   }
+            // }
+            }
+            //Command.data=0x0A;
+        //command_pub.publish(Command);
+        }else if(UAV_Command==0)
         {
-            Command.data=0xA6;
-          //  ROS_INFO("Go Up");
+            Command.data=0xFC; //起飞
             command_pub.publish(Command);
-            //sleep(0.05);
-        }
-        else if (Target_Position[2]-Now_Position[2]<-0.1)
+            //UAV_Command=3;
+        }else if(UAV_Command==2)
         {
-            Command.data=0xA7;
-           // ROS_INFO("Go Down");
+            Command.data=0xFB; //降落
             command_pub.publish(Command);
-            //sleep(0.05);
-        }
-        else
+            UAV_Command=3;
+        }else if (UAV_Command==4)
         {
-      float Target_Angle;
-      if(Distance(Now_Position[0],Now_Position[1],Target_Position[0],Target_Position[1])>0.5)
-        {
-            Target_Angle=Delta_angle(Now_Position[0],Now_Position[1],Target_Position[0],Target_Position[1]); //Yaw
-            //My_Angle 无人机头朝向
-            //Target_Angle 目标方向  
-            //ROS_INFO("Target_Angle:%f",Target_Angle);
-            //ROS_INFO("MinBet_Angle:%f",Min_BetAngle(My_Angle(2),Target_Angle));
-            if(Min_BetAngle(My_Angle(2),Target_Angle)>0.1)
-            {
-                Command.data=0xA5; //右转
-                //ROS_INFO("Go Right");
-                command_pub.publish(Command);
-                //sleep(0.05);
-            }
-            else if(Min_BetAngle(My_Angle(2),Target_Angle)<-0.1)
-            {
-                Command.data=0xA4; //左转
-                //ROS_INFO("Go Left");
-                command_pub.publish(Command);
-                //sleep(0.05);
-            }
-
-            if(Min_BetAngle(My_Angle(2),Target_Angle)<0.3 && Min_BetAngle(My_Angle(2),Target_Angle)>-0.3)
-            {
-                Command.data=0xA0; //前进
-               //ROS_INFO("Go Forward");
-                command_pub.publish(Command);
-                //sleep(0.05);
-            }
-
-            //ROS_INFO("%f",Target_Angle);
+            Command.data=0xF1;
+            ROS_INFO("Unlock!");
+            command_pub.publish(Command);
+            // UAV_Command=3;
         }
-        // else if(Distance(Now_Position[0],Now_Position[1],Target_Position[0],Target_Position[1])>0.3 && Distance(Now_Position[0],Now_Position[1],Target_Position[0],Target_Position[1])<=0.5)
-        // {
-        //     float XiangduiAngle=XIangdui_BetAngle(My_Angle(2),Target_Angle);
 
-        //     //ROS_INFO("Xiangdui:%f",XiangduiAngle);
-
-        //   if(XiangduiAngle>=-3.1415926/2+3.1415926/6 && XiangduiAngle<3.1415926/2-3.1415926/6)
-        //   {
-        //     Command.data=0xA3; //右移
-        //     command_pub.publish(Command);
-        //   }  
-        //   else if(XiangduiAngle>=3.1415926/2+3.1415926/6 || XiangduiAngle<-3.1415926/2-3.1415926/6)
-        //   {
-        //     Command.data=0xA2; //左移
-        //     command_pub.publish(Command);              
-        //   }
-        //   else if(XiangduiAngle>=3.1415926/2-3.1415926/6 && XiangduiAngle<3.1415926/2+3.1415926/6)
-        //   {
-        //         Command.data=0xA0; //前进
-        //        //ROS_INFO("Go Forward");
-        //         command_pub.publish(Command);
-        //   }
-        //   else if(XiangduiAngle>=-3.1415926/2-3.1415926/6 && XiangduiAngle<-3.1415926/2+3.1415926/6)
-        //   {
-        //         Command.data=0xA1; //后退
-        //        //ROS_INFO("Go Forward");
-        //         command_pub.publish(Command);
-        //   }
-        // }
-        }
-        //Command.data=0x0A;
-       //command_pub.publish(Command);
-    }
-    else if(UAV_Command==0)
-    {
-    Command.data=0xFC; //起飞
-    command_pub.publish(Command);
-    //UAV_Command=3;
-    }
-    else if(UAV_Command==2)
-    {
-    Command.data=0xFB; //降落
-    command_pub.publish(Command);
-    UAV_Command=3;
+        ros::spinOnce();
+        loop_rate.sleep();  
     }
 
-    ros::spinOnce();
-    loop_rate.sleep();  
-    }
+
     return 0; 
 }

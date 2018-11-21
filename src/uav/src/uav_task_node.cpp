@@ -24,18 +24,20 @@ std::vector<std::vector<Eigen::Vector3f> >  uavs_trajectory;
 
 void createTrajectory()
 {
-    uav_count = 1;
-    trajectory_count = 3;
+    uav_count = 3;
+    trajectory_count = 2;
     uavs_trajectory.resize(uav_count);
     uavs_trajectory[0].resize(trajectory_count);
-    uavs_trajectory[0][0] << 1, 1, 2.2;
-    uavs_trajectory[0][1] << 3, 1, 2.2;
-    uavs_trajectory[0][2] << 0.6, 0.6, 2.2;
+    uavs_trajectory[0][0] << 4, 0.3, 2.2;
+    uavs_trajectory[0][1] << 1, 0.3, 1.8;
 
-    // uavs_trajectory[1].resize(trajectory_count);
-    // uavs_trajectory[1][0] << 0.6, 2.6, 2.2;
-    // uavs_trajectory[1][1] << 3, 2.6, 2.2;
-    // uavs_trajectory[1][2] << 0.6, 2.6, 2.2;
+    uavs_trajectory[1].resize(trajectory_count);
+    uavs_trajectory[1][0] << 4, 1.6, 2.2;
+    uavs_trajectory[1][1] << 1, 1.6, 1.8;
+
+    uavs_trajectory[2].resize(trajectory_count);
+    uavs_trajectory[2][0] << 4, 2.9, 2.2;
+    uavs_trajectory[2][1] << 1, 2.9, 1.8;
     
 }
 
@@ -82,6 +84,17 @@ void Land_on(ros::Publisher Pub)
         Pub.publish(Target_Position);
 }
 
+void Unlock(ros::Publisher Pub)
+{
+        uav::task_position Target_Position;
+        Target_Position.x=0;
+        Target_Position.y=0;
+        Target_Position.z=0;
+        Target_Position.c=4;
+        
+        Pub.publish(Target_Position);
+}
+
 int main(int argc, char** argv) 
 { 
     ros::init(argc, argv, "uav_ctrl_node"); 
@@ -109,9 +122,12 @@ int main(int argc, char** argv)
     int TASK_CASE=0;
     float My_time=0;
     uav::task_position Target_Position;
-                
+            
     sleep(5);
-    
+    for (int i = 0; i < uav_count; i++)
+        Unlock(tasks_pub[i]);
+    sleep(1);
+
     start_time = ros::Time::now();
     trajectory_stamp = -2;
 
@@ -157,39 +173,6 @@ int main(int argc, char** argv)
                 Land_on(tasks_pub[i]);
             while(1);
         }
-        // switch(TASK_CASE)
-        // {
-        //     case 0:
-        //         Take_off(tasks_pub[0]);
-        //         Take_off(tasks_pub[1]);
-        //         Take_off(tasks_pub[2]);
-        //         Take_off(tasks_pub[3]);
-        //         if(My_time>2500){My_time=0;TASK_CASE=1;}
-        //         break;
-        //     case 1:
-        //         Command_Pub(tasks_pub[0],4,3,2.5);
-        //         Command_Pub(tasks_pub[1],1,3,2.5);
-        //         Command_Pub(tasks_pub[2],1,0,2.5);
-        //         Command_Pub(tasks_pub[3],4,0,2.5);
-        //         if(My_time>15000){My_time=0;TASK_CASE=2;}
-        //         break;               
-        //     case 2:
-        //         Command_Pub(tasks_pub[0],4,3,1.8);
-        //         Command_Pub(tasks_pub[1],1,3,1.8);
-        //         Command_Pub(tasks_pub[2],1,0,1.8);
-        //         Command_Pub(tasks_pub[3],4,0,1.8);
-        //         if(My_time>5000){My_time=0;TASK_CASE=3;}
-        //         break;
-        //     case 3:
-        //         if(My_time>5000){My_time=0;TASK_CASE=3;}
-        //         break;
-        //     default:
-        //         break;
-        // }
-
-        
-
-        
 
         ros::spinOnce();
         loop_rate.sleep(); 

@@ -42,6 +42,8 @@ static std::vector<sensor_msgs::Imu> imu_datas;
 static std::vector<uav::UWB> uwb_datas;
 static std::vector<uav::baro> baro_datas;
 
+static Eigen::Quaternion<float> uav_init_q;
+
 static ros::Time datas_rate_clk;
 
 static int imu_data_cnt = 0, uwb_data_cnt = 0;
@@ -122,6 +124,12 @@ void pose_estimator(
             // g += imu_a;
             bw += imu_w;
             imu_init_cnt += 1;
+
+            uav_init_q.w() = imu_datas[imu_datas.size() - 1].orientation.w;
+            uav_init_q.x() = imu_datas[imu_datas.size() - 1].orientation.x;
+            uav_init_q.y() = imu_datas[imu_datas.size() - 1].orientation.y;
+            uav_init_q.z() = imu_datas[imu_datas.size() - 1].orientation.z;
+            
         }
 
         if (uwb_init_cnt >= 3 && imu_init_cnt >= 50)
@@ -346,13 +354,25 @@ void pose_estimator(
     states_msg.orientation.y = q.y();
     states_msg.orientation.z = q.z();
 
+    // use orientation data from uav
+    Eigen::Quaternion<float> uav_q;
+    uav_q.w() = imu_datas[imu_datas.size() - 1].orientation.w;
+    uav_q.x() = imu_datas[imu_datas.size() - 1].orientation.x;
+    uav_q.y() = imu_datas[imu_datas.size() - 1].orientation.y;
+    uav_q.z() = imu_datas[imu_datas.size() - 1].orientation.z;
+    uav_q = uav_q * uav_init_q.inverse();
+    states_msg.orientation.w = uav_q.w();
+    states_msg.orientation.x = uav_q.x();
+    states_msg.orientation.y = uav_q.y();
+    states_msg.orientation.z = uav_q.z();
+
     // states_msg.orientation.w = q_dc.w();
     // states_msg.orientation.x = q_dc.x();
     // states_msg.orientation.y = q_dc.y();
     // states_msg.orientation.z = q_dc.z();
-    states_msg.position.x = 1;
-    states_msg.position.y = 0;
-    states_msg.position.z = 0;
+    // states_msg.position.x = 1;
+    // states_msg.position.y = 0;
+    // states_msg.position.z = 0;
     
     states_msg.linear_velocity.x = v.x();
     states_msg.linear_velocity.y = v.y();
@@ -376,17 +396,28 @@ void pose_estimator(
     
     states_pub.publish(states_msg);
 
-
-    // pub q_dc to uav_0 as reference
-    states_msg.position.x = 0;
-    states_msg.position.y = 0;
-    states_msg.position.z = 0;
-    states_msg.orientation.w = q_dc.w();
-    states_msg.orientation.x = q_dc.x();
-    states_msg.orientation.y = q_dc.y();
-    states_msg.orientation.z = q_dc.z();
+    // Eigen::Quaternion<float> uav_q;
     
-    states_ref_pub.publish(states_msg);
+    // // pub q_dc to uav_0 as reference
+    // uav_q.w() = imu_datas[imu_datas.size() - 1].orientation.w;
+    // uav_q.x() = imu_datas[imu_datas.size() - 1].orientation.x;
+    // uav_q.y() = imu_datas[imu_datas.size() - 1].orientation.y;
+    // uav_q.z() = imu_datas[imu_datas.size() - 1].orientation.z;
+    // uav_q = uav_q * uav_init_q.inverse();
+
+    // states_msg.position.x = 0;
+    // states_msg.position.y = 0;
+    // states_msg.position.z = 0;
+    // // states_msg.orientation.w = q_dc.w();
+    // // states_msg.orientation.x = q_dc.x();
+    // // states_msg.orientation.y = q_dc.y();
+    // // states_msg.orientation.z = q_dc.z();
+    // states_msg.orientation.w = uav_q.w();
+    // states_msg.orientation.x = uav_q.x();
+    // states_msg.orientation.y = uav_q.y();
+    // states_msg.orientation.z = uav_q.z();
+
+    // states_ref_pub.publish(states_msg);
 
     last_time = curr_time;
 
